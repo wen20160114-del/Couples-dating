@@ -150,7 +150,6 @@
 </div>
 
 <script>
-    // 註冊 Service Worker 支援 PWA
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('data:text/javascript;base64,' + btoa(`
@@ -230,7 +229,6 @@
             regionDiv.innerHTML = `<div class="sub-region-title">📍 ${region}</div>`;
             
             let ul = document.createElement('ul');
-            regionGroups[region].push ? null : null; // safe check
             regionGroups[region].forEach(p => {
                 const li = document.createElement('li');
                 
@@ -283,7 +281,7 @@
         e.preventDefault();
         const name = document.getElementById('name').value;
         const category = document.getElementById('category').value;
-        const note = document.getElementById('note'].value;
+        const note = document.getElementById('note').value;
 
         let places = getPlaces();
         const newPlace = {
