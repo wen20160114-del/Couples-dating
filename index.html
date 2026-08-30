@@ -78,7 +78,6 @@
         ul { padding-left: 20px; margin: 5px 0; }
         li { margin-bottom: 10px; line-height: 1.6; color: #334155; }
         .hidden { display: none; }
-        .hint { font-size: 12px; color: #64748b; margin-top: -12px; margin-bottom: 16px; display: block; }
     </style>
 </head>
 <body>
@@ -97,10 +96,6 @@
             <option value="drink">飲料</option>
             <option value="scenery">風景</option>
         </select>
-        
-        <label>Google 地圖網址（選填）：</label>
-        <input type="url" id="mapUrl" placeholder="有網址可貼，沒填也沒關係！">
-        <small class="hint">💡 沒填寫網址時，系統會自動用店名幫你產生 Google 地圖搜尋鍵。</small>
         
         <label>備註（建議包含地區，例如：南屯區、西區）：</label>
         <input type="text" id="note" placeholder="例如：南屯區、必吃花生豆花">
@@ -210,11 +205,10 @@
             regionGroups[region].forEach(p => {
                 const li = document.createElement('li');
                 
-                let mapLink = p.mapUrl && p.mapUrl.trim() !== '' 
-                    ? p.mapUrl 
-                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
-
+                // 自動使用店名產生 Google 地圖搜尋連結
+                let mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
                 let mapButtonHtml = `<a href="${mapLink}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
+                
                 let actionBtnHtml = isDonePage 
                     ? `<button class="delete-btn" onclick="deletePlace('${p.id}')">刪除</button>`
                     : `<button class="done-btn" onclick="markAsDone('${p.id}')">✔️ 完成</button>
@@ -261,7 +255,6 @@
         e.preventDefault();
         const name = document.getElementById('name').value;
         const category = document.getElementById('category').value;
-        const mapUrl = document.getElementById('mapUrl').value;
         const note = document.getElementById('note').value;
 
         let places = getPlaces();
@@ -269,7 +262,6 @@
             id: 'p_' + Date.now() + Math.random().toString(36).substr(2, 5),
             name,
             category,
-            mapUrl,
             note,
             status: 'want'
         };
