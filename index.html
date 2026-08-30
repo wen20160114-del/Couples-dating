@@ -11,6 +11,7 @@
         button { background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
         .secondary-btn { background: #6c757d; margin-top: 5px; }
         .map-btn { background: #28a745; padding: 2px 6px; font-size: 12px; width: auto; margin-left: 5px; text-decoration: none; display: inline-block; border-radius: 3px; color: white; }
+        .done-btn { background: #17a2b8; padding: 2px 6px; font-size: 12px; width: auto; margin-left: 5px; border-radius: 3px; color: white; cursor: pointer; border: none; }
         .category-section { margin-top: 20px; }
         ul { padding-left: 20px; }
         li { margin-bottom: 10px; line-height: 1.5; }
@@ -38,19 +39,20 @@
         
         <label>Google 地圖網址（選填）：</label>
         <input type="url" id="mapUrl" placeholder="有網址可貼，沒填也沒關係！">
-        <small class="hint">💡 沒填寫網址時，系統會自動用店名幫你產生Google地圖搜尋鍵。</small>
+        <small class="hint">💡 沒填寫網址時，系統會自動用店名幫你產生 Google 地圖搜尋鍵。</small>
         
         <label>備註：</label>
         <input type="text" id="note" placeholder="例如：南屯區、必吃花生豆花">
         
         <button type="submit">新增記錄</button>
     </form>
-    <button class="secondary-btn" onclick="switchPage('list')">查看我的口袋名單 ➔</button>
+    <button class="secondary-btn" onclick="switchPage('list')">查看我的口袋名單（想去） ➔</button>
+    <button class="secondary-btn" style="background: #28a745;" onclick="switchPage('done')">查看已去過 / 已完成清單 🏆</button>
 </div>
 
-<!-- 第二頁：清單列表 -->
+<!-- 第二頁：想去清單列表 -->
 <div id="page-list" class="card hidden">
-    <h2>📌 我的口袋名單</h2>
+    <h2>📌 我的口袋名單（想去）</h2>
     
     <div class="category-section">
         <h3>主食</h3>
@@ -72,6 +74,16 @@
     <button class="secondary-btn" onclick="switchPage('home')">⬅ 返回新增頁面</button>
 </div>
 
+<!-- 第三頁：已完成（已去過）清單 -->
+<div id="page-done" class="card hidden">
+    <h2>🏆 已去過的地點</h2>
+    <div class="category-section">
+        <ul id="list-done"></ul>
+    </div>
+    <button class="secondary-btn" onclick="switchPage('home')">⬅ 返回新增頁面</button>
+    <button class="secondary-btn" onclick="switchPage('list')">⬅ 返回想去清單</button>
+</div>
+
 <script>
     const categories = { 'main': '主食', 'snack': '點心', 'drink': '飲料', 'scenery': '風景' };
     
@@ -84,23 +96,31 @@
         render();
     }
 
+    // 頁面切換控制
     window.switchPage = function(page) {
+        document.getElementById('page-home').classList.add('hidden');
+        document.getElementById('page-list').classList.add('hidden');
+        document.getElementById('page-done').classList.add('hidden');
+
         if (page === 'home') {
             document.getElementById('page-home').classList.remove('hidden');
-            document.getElementById('page-list').classList.add('hidden');
-        } else {
-            document.getElementById('page-home').classList.add('hidden');
+        } else if (page === 'list') {
             document.getElementById('page-list').classList.remove('hidden');
+            render();
+        } else if (page === 'done') {
+            document.getElementById('page-done').classList.remove('hidden');
             render();
         }
     }
 
     function render() {
         const places = getPlaces();
+        
+        // 1. 渲染第二頁（想去清單，status != 'done'）
         for (let key in categories) {
             const ul = document.getElementById(`list-${key}`);
             ul.innerHTML = '';
-            const filtered = places.filter(p => p.category === key);
+            const filtered = places.filter(p => p.category === key && p.status !== 'done');
             
             if (filtered.length === 0) {
                 ul.innerHTML = '<li style="color: #888;">暫無記錄</li>';
@@ -109,18 +129,52 @@
                     const realIndex = places.findIndex(item => item === p);
                     const li = document.createElement('li');
                     
-                    // 如果有填地圖網址就用網址，沒填就自動用店名產生 Google 地圖搜尋連結
                     let mapLink = p.mapUrl && p.mapUrl.trim() !== '' 
                         ? p.mapUrl 
                         : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
 
                     let mapButtonHtml = `<a href="${mapLink}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
 
-                    li.innerHTML = `<strong>${p.name}</strong> ${mapButtonHtml} - <small>${p.note || ''}</small> <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
+                    li.innerHTML = `<strong>${p.name}</strong> ${mapButtonHtml} - <small>${p.note || ''}</small> 
+                                    <button class="done-btn" onclick="markAsDone(${realIndex})">✔️ 完成</button>
+                                    <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
                     ul.appendChild(li);
                 });
             }
         }
+
+        // 2. 渲染第三頁（已完成清單，status == 'done'）
+        const doneUl = document.getElementById('list-done');
+        doneUl.innerHTML = '';
+        const donePlaces = places.filter(p => p.status === 'done');
+
+        if (donePlaces.length === 0) {
+            doneUl.innerHTML = '<li style="color: #888;">目前還沒有去過任何地方喔！</li>';
+        } else {
+            donePlaces.forEach((p) => {
+                const realIndex = places.findIndex(item => item === p);
+                const li = document.createElement('li');
+                
+                let mapLink = p.mapUrl && p.mapUrl.trim() !== '' 
+                    ? p.mapUrl 
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
+
+                let mapButtonHtml = `<a href="${mapLink}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
+                let catName = categories[p.category] || '';
+
+                li.innerHTML = `<strong>${p.name}</strong> [${catName}] ${mapButtonHtml} - <small>${p.note || ''}</small> 
+                                <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
+                doneUl.appendChild(li);
+            });
+        }
+    }
+
+    // 標記為已完成
+    window.markAsDone = function(index) {
+        let places = getPlaces();
+        places[index].status = 'done';
+        savePlaces(places);
+        alert('太棒了！已移至「已去過」清單 🏆');
     }
 
     window.deletePlace = function(index) {
@@ -137,7 +191,7 @@
         const note = document.getElementById('note').value;
 
         let places = getPlaces();
-        places.push({ name, category, mapUrl, note });
+        places.push({ name, category, mapUrl, note, status: 'want' });
         savePlaces(places);
 
         document.getElementById('placeForm').reset();
