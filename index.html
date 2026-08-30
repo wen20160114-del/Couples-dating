@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我們的專屬口袋地圖</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff758c">
     <!-- Firebase App (核心) 與 Firestore -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ff758c">
-    <link rel="manifest" href="manifest.json">
     <style>
         :root {
             --primary-color: #ff758c;
@@ -28,14 +27,14 @@
         }
 
         body {
-            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 50%, #fbc2eb 100%);
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
             color: var(--text-color);
-            color-scheme: light;
+            color-scheme: light; /* 強制淺色模式，避免深色模式變黑 */
         }
 
         .container {
@@ -130,11 +129,6 @@
             box-shadow: 0 4px 15px rgba(255, 117, 140, 0.4);
         }
 
-        .btn-secondary {
-            background: #6c757d;
-            color: white;
-        }
-
         .btn-success {
             background: #28a745;
             color: white;
@@ -151,7 +145,7 @@
             margin-top: 8px;
         }
 
-        /* 列表與分類群組樣式 */
+        /* 列表與雙層分類群組樣式 */
         .list-container {
             flex-grow: 1;
             overflow-y: auto;
@@ -160,12 +154,19 @@
         }
 
         .category-header {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             color: #ff5277;
-            margin: 16px 0 8px 4px;
-            padding-bottom: 4px;
+            margin: 20px 0 10px 4px;
+            padding-bottom: 6px;
             border-bottom: 2px solid #ffe6eb;
             font-weight: 700;
+        }
+
+        .region-header {
+            font-size: 1rem;
+            color: #0288d1;
+            margin: 12px 0 6px 12px;
+            font-weight: 600;
         }
 
         .place-card {
@@ -174,6 +175,7 @@
             border-radius: 14px;
             padding: 16px;
             margin-bottom: 12px;
+            margin-left: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.03);
             transition: transform 0.2s;
         }
@@ -229,25 +231,39 @@
                 <input type="text" id="place-name" placeholder="例如：屋馬燒肉">
             </div>
             <div class="form-group">
-                <label>分類：</label>
+                <label>分類 (大標)：</label>
                 <select id="place-category">
-                    <option value="主食">主食</option>
-                    <option value="點心">點心</option>
-                    <option value="飲料">飲料</option>
-                    <option value="風景">風景</option>
+                    <option value="美食餐廳">美食餐廳</option>
+                    <option value="甜點/飲料">甜點/飲料</option>
+                    <option value="約會景點">約會景點</option>
+                    <option value="戶外踏青">戶外踏青</option>
                     <option value="其他">其他</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>備註 (建議包含地區，例如：南屯區)：</label>
-                <input type="text" id="place-memo" placeholder="例如：南屯區、必吃花生豆花">
+                <label>區域 (小標)：</label>
+                <select id="place-region">
+                    <option value="西屯區">西屯區</option>
+                    <option value="南屯區">南屯區</option>
+                    <option value="北屯區">北屯區</option>
+                    <option value="中區">中區</option>
+                    <option value="西區">西區</option>
+                    <option value="東區">東區</option>
+                    <option value="南區">南區</option>
+                    <option value="北區">北區</option>
+                    <option value="其他地區">其他地區</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>備註 (其他補充)：</label>
+                <input type="text" id="place-memo" placeholder="例如：必吃花生豆花、停車方便">
             </div>
             <button class="btn-primary" onclick="addPlace()">✨ 新增記錄到雲端</button>
             <button class="btn-nav" onclick="switchPage(2)">📌 查看我們的口袋名單 (想去)</button>
             <button class="btn-nav" onclick="switchPage(3)">🏆 查看已去過 / 已完成清單</button>
         </div>
 
-        <!-- 頁面 2：想去清單頁 (依分類群組) -->
+        <!-- 頁面 2：想去清單頁 -->
         <div id="page-2" class="page">
             <h2>📌 我們的口袋名單 (想去)</h2>
             <div id="wishlist-container" class="list-container">
@@ -256,7 +272,7 @@
             <button class="btn-nav" onclick="switchPage(1)">⬅️ 返回新增頁面</button>
         </div>
 
-        <!-- 頁面 3：已完成清單頁 (依分類群組) -->
+        <!-- 頁面 3：已完成清單頁 -->
         <div id="page-3" class="page">
             <h2>🏆 已去過 / 已完成清單</h2>
             <div id="completed-container" class="list-container">
@@ -297,9 +313,9 @@
             document.getElementById(`page-${pageNum}`).classList.add('active');
             
             if (pageNum === 2) {
-                loadPlaces(false); // 載入想去清單
+                loadPlaces(false);
             } else if (pageNum === 3) {
-                loadPlaces(true);  // 載入已完成清單
+                loadPlaces(true);
             }
         }
 
@@ -307,6 +323,7 @@
         function addPlace() {
             const name = document.getElementById('place-name').value.trim();
             const category = document.getElementById('place-category').value;
+            const region = document.getElementById('place-region').value;
             const memo = document.getElementById('place-memo').value.trim();
 
             if (!name) {
@@ -317,6 +334,7 @@
             db.collection("dating_places").add({
                 name: name,
                 category: category,
+                region: region,
                 memo: memo,
                 completed: false,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -325,14 +343,14 @@
                 alert('✨ 成功新增到雲端口袋名單！');
                 document.getElementById('place-name').value = '';
                 document.getElementById('place-memo').value = '';
-                switchPage(2); // 新增後直接跳轉到想去清單
+                switchPage(2);
             })
             .catch((error) => {
                 alert('新增失敗：' + error.message);
             });
         }
 
-        // 載入並依「分類」群組顯示資料
+        // 載入並依「大標(分類)」與「小標(區域)」雙層群組顯示資料
         function loadPlaces(isCompleted) {
             const containerId = isCompleted ? 'completed-container' : 'wishlist-container';
             const container = document.getElementById(containerId);
@@ -347,60 +365,69 @@
                         return;
                     }
 
-                    // 1. 收集資料並依照分類進行分組 (Group by category)
+                    // 1. 建立雙層結構: groups[category][region] = [items...]
                     const groups = {};
                     querySnapshot.forEach((doc) => {
-                        const data = doc.item = doc.data();
+                        const data = doc.data();
                         data.id = doc.id;
                         const cat = data.category || '未分類';
+                        const reg = data.region || '其他區域';
                         
                         if (!groups[cat]) {
-                            groups[cat] = [];
+                            groups[cat] = {};
                         }
-                        groups[cat].push(data);
+                        if (!groups[cat][reg]) {
+                            groups[cat][reg] = [];
+                        }
+                        groups[cat][reg].push(data);
                     });
 
                     container.innerHTML = '';
 
-                    // 2. 依照分類大標與內容渲染到畫面上
-                    for (const [categoryName, items] of Object.entries(groups)) {
-                        // 建立分類大標
-                        const header = document.createElement('div');
-                        header.className = 'category-header';
-                        header.innerHTML = `📌 ${categoryName}`;
-                        container.appendChild(header);
+                    // 2. 渲染畫面
+                    for (const [categoryName, regions] of Object.entries(groups)) {
+                        const catHeader = document.createElement('div');
+                        catHeader.className = 'category-header';
+                        catHeader.innerHTML = `📌 ${categoryName}`;
+                        container.appendChild(catHeader);
 
-                        // 建立該分類下的所有卡片
-                        items.forEach(item => {
-                            const card = document.createElement('div');
-                            card.className = 'place-card';
-                            
-                            const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + (item.memo || ''))}`;
-                            
-                            let actionButtons = '';
-                            if (!isCompleted) {
-                                actionButtons = `
-                                    <button class="btn-primary" onclick="window.open('${mapsUrl}', '_blank')">🗺️ Google 地圖</button>
-                                    <button class="btn-success" onclick="toggleStatus('${item.id}', true)">✔️ 標記已去過</button>
-                                    <button class="btn-danger" onclick="deletePlace('${item.id}')">🗑️ 刪除</button>
-                                `;
-                            } else {
-                                actionButtons = `
-                                    <button class="btn-primary" onclick="window.open('${mapsUrl}', '_blank')">🗺️ Google 地圖</button>
-                                    <button class="btn-nav" onclick="toggleStatus('${item.id}', false)">↩️ 移回想去</button>
-                                    <button class="btn-danger" onclick="deletePlace('${item.id}')">🗑️ 刪除</button>
-                                `;
-                            }
+                        for (const [regionName, items] of Object.entries(regions)) {
+                            const regHeader = document.createElement('div');
+                            regHeader.className = 'region-header';
+                            regHeader.innerHTML = `📍 ${regionName}`;
+                            container.appendChild(regHeader);
 
-                            card.innerHTML = `
-                                <div class="place-title">${item.name}</div>
-                                <div class="place-memo">📝 備註：${item.memo || '無'}</div>
-                                <div class="card-actions">
-                                    ${actionButtons}
-                                </div>
-                            `;
-                            container.appendChild(card);
-                        });
+                            items.forEach(item => {
+                                const card = document.createElement('div');
+                                card.className = 'place-card';
+                                
+                                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.region + ' ' + (item.memo || ''))}`;
+                                
+                                let actionButtons = '';
+                                if (!isCompleted) {
+                                    actionButtons = `
+                                        <button class="btn-primary" onclick="window.open('${mapsUrl}', '_blank')">🗺️ Google 地圖</button>
+                                        <button class="btn-success" onclick="toggleStatus('${item.id}', true)">✔️ 標記已去過</button>
+                                        <button class="btn-danger" onclick="deletePlace('${item.id}')">🗑️ 刪除</button>
+                                    `;
+                                } else {
+                                    actionButtons = `
+                                        <button class="btn-primary" onclick="window.open('${mapsUrl}', '_blank')">🗺️ Google 地圖</button>
+                                        <button class="btn-nav" onclick="toggleStatus('${item.id}', false)">↩️ 移回想去</button>
+                                        <button class="btn-danger" onclick="deletePlace('${item.id}')">🗑️ 刪除</button>
+                                    `;
+                                }
+
+                                card.innerHTML = `
+                                    <div class="place-title">${item.name}</div>
+                                    <div class="place-memo">📝 備註：${item.memo || '無'}</div>
+                                    <div class="card-actions">
+                                        ${actionButtons}
+                                    </div>
+                                `;
+                                container.appendChild(card);
+                            });
+                        }
                     }
                 })
                 .catch((error) => {
@@ -409,13 +436,12 @@
                 });
         }
 
-        // 切換完成狀態（想去 ⇄ 已去過）
+        // 切換完成狀態
         function toggleStatus(id, newStatus) {
             db.collection("dating_places").doc(id).update({
                 completed: newStatus
             })
             .then(() => {
-                // 重新載入當前頁面
                 if (newStatus) {
                     loadPlaces(false);
                 } else {
@@ -432,7 +458,6 @@
             if (confirm('確定要刪除這個地點嗎？')) {
                 db.collection("dating_places").doc(id).delete()
                     .then(() => {
-                        // 重新刷新目前顯示的頁面
                         const isComp = document.getElementById('page-3').classList.contains('active');
                         loadPlaces(isComp);
                     })
