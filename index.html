@@ -1,199 +1,466 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>我們的雲端口袋地圖</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
+    <title>我們的專屬約會口袋地圖</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body { 
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; 
-            max-width: 600px; 
-            margin: 0 auto; 
-            padding: 20px; 
-            background: linear-gradient(135deg, #3b82f6 0%, #ec4899 100%); 
-            min-height: 100vh;
-            color: #333;
+        :root {
+            --primary-color: #ff6584;
+            --primary-hover: #ff476f;
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --gray-text: #666666;
+            --border-color: #e1e8ed;
         }
-        .card { 
-            background: #ffffff; 
-            padding: 25px; 
-            margin-bottom: 20px; 
-            border-radius: 16px; 
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); 
-            animation: fadeIn 0.3s ease-in-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        h2 { margin-top: 0; color: #1e293b; font-size: 22px; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
-        label { display: block; font-weight: 600; margin-bottom: 6px; color: #475569; font-size: 14px; }
-        input, select { 
-            width: 100%; 
-            padding: 12px; 
-            margin: 4px 0 16px 0; 
-            border: 1px solid #cbd5e1; 
-            border-radius: 8px; 
-            font-size: 15px; 
-            transition: all 0.2s;
-            background: #f8fafc;
-        }
-        input:focus, select:focus { 
-            outline: none; 
-            border-color: #3b82f6; 
-            background: #fff;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); 
-        }
-        button { 
-            width: 100%; 
-            padding: 12px; 
-            margin: 6px 0; 
-            background: #3b82f6; 
-            color: white; 
-            border: none; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-size: 16px; 
-            font-weight: 600;
-            transition: background 0.2s, transform 0.1s;
-        }
-        button:hover { background: #2563eb; }
-        button:active { transform: scale(0.98); }
-        .secondary-btn { background: #64748b; }
-        .secondary-btn:hover { background: #475569; }
-        .success-btn { background: #10b981; }
-        .success-btn:hover { background: #059669; }
-        
-        .map-btn { background: #10b981; padding: 4px 10px; font-size: 13px; width: auto; margin-left: 6px; text-decoration: none; display: inline-block; border-radius: 6px; color: white; font-weight: 500; }
-        .map-btn:hover { background: #059669; }
-        .done-btn { background: #0ea5e9; padding: 4px 10px; font-size: 13px; width: auto; margin-left: 6px; border-radius: 6px; color: white; cursor: pointer; border: none; font-weight: 500; }
-        .done-btn:hover { background: #0284c7; }
-        .delete-btn { background: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; margin-left: 6px; width: auto; font-weight: 500; }
-        .delete-btn:hover { background: #dc2626; }
 
-        .category-section { margin-top: 24px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; }
-        .category-section h3 { margin: 0 0 10px 0; font-size: 17px; color: #334155; border-left: 4px solid #3b82f6; padding-left: 8px; }
-        .sub-region-title { font-size: 14px; color: #2563eb; margin: 12px 0 6px 0; font-weight: bold; background: #e0f2fe; display: inline-block; padding: 2px 8px; border-radius: 4px; }
-        ul { padding-left: 20px; margin: 5px 0; }
-        li { margin-bottom: 10px; line-height: 1.6; color: #334155; }
-        .hidden { display: none; }
-        #loading-tip { text-align: center; color: #64748b; font-size: 14px; margin-bottom: 10px; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            background-attachment: fixed;
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .status-bar {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--gray-text);
+            margin-bottom: 20px;
+            padding: 6px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #444;
+        }
+
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3px, box-shadow 0.3s;
+            background-color: #fafbfc;
+        }
+
+        input[type="text"]:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(255, 101, 132, 0.15);
+            background-color: #fff;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            text-decoration: none;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 101, 132, 0.3);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        /* 列表檢視畫面樣式 */
+        .list-view {
+            display: none;
+        }
+
+        .place-card {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .place-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .place-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+
+        .place-category {
+            font-size: 0.75rem;
+            background: #ffe6eb;
+            color: var(--primary-color);
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .place-note {
+            font-size: 0.9rem;
+            color: var(--gray-text);
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+
+        .place-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-map {
+            background-color: #4285F4;
+            color: white;
+        }
+
+        .btn-done {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .back-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
 
-<div id="page-home" class="card">
-    <h2>📍 想一起去的地方(吃美食)</h2>
-    <div id="loading-tip">🔄 正在連線雲端資料庫...</div>
-    <form id="placeForm">
-        <label>名稱：</label>
-        <input type="text" id="name" required placeholder="例如：馬岡豆花">
-        
-        <label>分類：</label>
-        <select id="category">
-            <option value="main">主食</option>
-            <option value="snack">點心</option>
-            <option value="drink">飲料</option>
-            <option value="scenery">風景</option>
-        </select>
-        
-        <label>Google 地圖網址（選填）：</label>
-        <input type="text" id="mapUrl" placeholder="有網址可貼，沒填也沒有關係！">
-        <div style="font-size: 12px; color: #64748b; margin-top: -12px; margin-bottom: 16px;">💡 沒填寫網址時，系統會自動用店名幫你產生 Google 地圖搜尋。</div>
-        
-        <label>備註（建議包含地區，例如：南屯區、西區）：</label>
-        <input type="text" id="note" placeholder="例如：南屯區、必吃花生豆花">
-        
-        <button type="submit">✨ 新增記錄到雲端</button>
-    </form>
-    <button class="secondary-btn" onclick="switchPage('list')">📌 查看我們的口袋名單（想去）</button>
-    <button class="success-btn" onclick="switchPage('done')">🏆 查看已去過 / 已完成清單</button>
-</div>
+    <div class="container">
+        <!-- 填寫表單畫面 -->
+        <div id="form-view">
+            <h2>📍 想一起去的地方(吃美食)</h2>
+            <div id="db-status" class="status-bar">⏳ 正在連線雲端資料庫...</div>
 
-<div id="page-list" class="card hidden">
-    <h2>📌 我們的口袋名單（想去）</h2>
-    
-    <div class="category-section"><h3>主食</h3><div id="list-main"></div></div>
-    <div class="category-section"><h3>點心</h3><div id="list-snack"></div></div>
-    <div class="category-section"><h3>飲料</h3><div id="list-drink"></div></div>
-    <div class="category-section"><h3>風景</h3><div id="list-scenery"></div></div>
+            <div class="form-group">
+                <label for="placeName">名稱：</label>
+                <input type="text" id="placeName" placeholder="例如：馬岡豆花">
+            </div>
 
-    <button class="success-btn" style="margin-top: 20px;" onclick="switchPage('done')">🏆 查看已去過 / 已完成清單</button>
-    <button class="secondary-btn" style="margin-top: 6px;" onclick="switchPage('home')">⬅ 返回新增頁面</button>
-</div>
+            <div class="form-group">
+                <label for="placeCategory">分類：</label>
+                <select id="placeCategory">
+                    <option value="主食">主食</option>
+                    <option value="甜點/飲料">甜點/飲料</option>
+                    <option value="散步約會">散步約會</option>
+                    <option value="旅遊景點">旅遊景點</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
 
-<div id="page-done" class="card hidden">
-    <h2>🏆 已去過的地點</h2>
-    
-    <div class="category-section"><h3>主食</h3><div id="list-done-main"></div></div>
-    <div class="category-section"><h3>點心</h3><div id="list-done-snack"></div></div>
-    <div class="category-section"><h3>飲料</h3><div id="list-done-drink"></div></div>
-    <div class="category-section"><h3>風景</h3><div id="list-done-scenery"></div></div>
+            <div class="form-group">
+                <label for="placeNote">備註（建議包含地區，例如：南屯區、西區）：</label>
+                <input type="text" id="placeNote" placeholder="例如：南屯區、必吃花生豆花">
+            </div>
 
-    <button class="secondary-btn" style="margin-top: 20px;" onclick="switchPage('home')">⬅ 返回新增頁面</button>
-    <button class="secondary-btn" onclick="switchPage('list')">⬅ 返回想去清單</button>
-</div>
+            <button class="btn btn-primary" onclick="addPlace()">✨ 新增記錄到雲端</button>
+            <button class="btn btn-secondary" onclick="switchView('wishlist')">📌 查看我們的口袋名單 (想去)</button>
+            <button class="btn btn-success" onclick="switchView('completed')">🏆 查看已去過 / 已完成清單</button>
+        </div>
 
-<script>
-    // Firebase 雲端設定
-    const firebaseConfig = {
-        apiKey: "AIzaSyAom-u5FTFI8B8ZWiCdZ0YXqy2CuJ5eNFg",
-        authDomain: "couples-dating-50cb0.firebaseapp.com",
-        projectId: "couples-dating-50cb0",
-        storageBucket: "couples-dating-50cb0.firebasestorage.app",
-        messagingSenderId: "361607229257",
-        appId: "1:361607229257:web:5f8a740525dad3c62bb498"
-    };
+        <!-- 列表檢視畫面 -->
+        <div id="list-view" class="list-view">
+            <h2 id="list-title">📌 口袋名單</h2>
+            <div id="places-container">
+                <!-- 動態生成的清單會在這裡 -->
+            </div>
+            <div class="back-link">
+                <a href="#" onclick="switchView('form')">⬅️ 返回新增頁面</a>
+            </div>
+        </div>
+    </div>
 
-    // 初始化 Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    <script>
+        // ==========================================
+        // 🛠️ 請填入你從 Firebase 複製的設定資訊
+        // ==========================================
+        const firebaseConfig = {
+            apiKey: "請替換成你的apiKey",
+            authDomain: "請替換成你的authDomain",
+            projectId: "請替換成你的projectId",
+            storageBucket: "請替換成你的storageBucket",
+            messagingSenderId: "請替換成你的messagingSenderId",
+            appId: "請替換成你的appId"
+        };
 
-    let allPlaces = [];
-
-    // 即時監聽雲端資料庫
-    db.collection("places").onSnapshot((snapshot) => {
-        allPlaces = [];
-        snapshot.forEach((doc) => {
-            allPlaces.push({ id: doc.id, ...doc.data() });
-        });
-        const tipEl = document.getElementById('loading-tip');
-        if (tipEl) tipEl.innerText = '✅ 雲端連線成功，資料同步中';
-        render();
-    }, (error) => {
-        const tipEl = document.getElementById('loading-tip');
-        if (tipEl) tipEl.innerText = '❌ 連線失敗，請檢查網路';
-        console.error(error);
-    });
-
-    const categories = { 'main': '主食', 'snack': '點心', 'drink': '飲料', 'scenery': '風景' };
-
-    window.switchPage = function(page) {
-        document.getElementById('page-home').classList.add('hidden');
-        document.getElementById('page-list').classList.add('hidden');
-        document.getElementById('page-done').classList.add('hidden');
-
-        if (page === 'home') {
-            document.getElementById('page-home').classList.remove('hidden');
-        } else if (page === 'list') {
-            document.getElementById('page-list').classList.remove('hidden');
-            render();
-        } else if (page === 'done') {
-            document.getElementById('page-done').classList.remove('hidden');
-            render();
+        // 初始化 Firebase
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            document.getElementById('db-status').innerText = '🟢 已成功連線至雲端資料庫 (雙向同步中)';
+            document.getElementById('db-status').style.color = '#28a745';
+        } catch (error) {
+            console.error("Firebase 初始化失敗:", error);
+            document.getElementById('db-status').innerText = '🔴 雲端連線失敗，請檢查設定參數';
+            document.getElementById('db-status').style.color = '#dc3545';
         }
-    }
 
-    function extractRegion(note) {
-        if (!note) return '未分類地區';
-        const match = note.match(/[\u4e05-\u9fa5]+[區市鎮鄉]/);
-        if (match) {
-            return match[0];
+        let currentMode = 'wishlist'; // 'wishlist' 或 'completed'
+
+        // 切換畫面
+        function switchView(mode) {
+            const formView = document.getElementById('form-view');
+            const listView = document.getElementById('list-view');
+            
+            if (mode === 'form') {
+                formView.style.display = 'block';
+                listView.style.display = 'none';
+            } else {
+                currentMode = mode;
+                formView.style.display = 'none';
+                listView.style.display = 'block';
+                document.getElementById('list-title').innerText = (mode === 'wishlist') ? '📌 我們的口袋名單 (想去)' : '🏆 已去過 / 已完成清單';
+                loadPlaces();
+            }
         }
-        return '其他地區';
-    }
+
+        // 新增地點到 Firestore
+        function addPlace() {
+            if (!db) {
+                alert('資料庫尚未連線成功，請先檢查設定！');
+                return;
+            }
+
+            const name = document.getElementById('placeName').value.trim();
+            const category = document.getElementById('placeCategory').value;
+            const note = document.getElementById('placeNote').value.trim();
+
+            if (!name) {
+                alert('請填寫地點名稱！');
+                return;
+            }
+
+            const newPlace = {
+                name: name,
+                category: category,
+                note: note,
+                completed: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            db.collection("dating_places").add(newPlace)
+                .then(() => {
+                    alert('成功新增到雲端！✨');
+                    document.getElementById('placeName').value = '';
+                    document.getElementById('placeNote').value = '';
+                })
+                .catch((error) => {
+                    console.error("新增失敗: ", error);
+                    alert('新增失敗，請稍後再試');
+                });
+        }
+
+        // 從 Firestore 讀取清單
+        function loadPlaces() {
+            if (!db) return;
+
+            const container = document.getElementById('places-container');
+            container.innerHTML = '<p style="text-align:center; color:#666;">載入中...</p>';
+
+            const isCompleted = (currentMode === 'completed');
+
+            db.collection("dating_places")
+                .where("completed", "==", isCompleted)
+                .get()
+                .then((querySnapshot) => {
+                    container.innerHTML = '';
+                    if (querySnapshot.empty) {
+                        container.innerHTML = '<p style="text-align:center; color:#888; padding: 20px;">這裡目前沒有資料喔！趕快去新增一個吧～</p>';
+                        return;
+                    }
+
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const docId = doc.id;
+                        
+                        // 自動以名稱與備註產生 Google 地圖搜尋網連結
+                        const searchQuery = encodeURIComponent((data.note ? data.note + ' ' : '') + data.name);
+                        const mapUrl = `https://www.google.com/maps/search/?api=1&query=${searchQuery}`;
+
+                        const card = document.createElement('div');
+                        card.className = 'place-card';
+                        
+                        let actionButtons = '';
+                        if (!data.completed) {
+                            actionButtons = `
+                                <button class="btn-sm btn-done" onclick="toggleComplete('${docId}', true)">✅ 標記已去過</button>
+                                <button class="btn-sm btn-delete" onclick="deletePlace('${docId}')">🗑️ 刪除</button>
+                            `;
+                        } else {
+                            actionButtons = `
+                                <button class="btn-sm btn-done" style="background-color:#6c757d;" onclick="toggleComplete('${docId}', false)">↩️ 移回想去</button>
+                                <button class="btn-sm btn-delete" onclick="deletePlace('${docId}')">🗑️ 刪除</button>
+                            `;
+                        }
+
+                        card.innerHTML = `
+                            <div class="place-header">
+                                <h3 class="place-title">${escapeHtml(data.name)}</h3>
+                                <span class="place-category">${escapeHtml(data.category)}</span>
+                            </div>
+                            ${data.note ? `<div class="place-note">📝 備註：${escapeHtml(data.note)}</div>` : ''}
+                            <div class="place-actions">
+                                <a href="${mapUrl}" target="_blank" class="btn-sm btn-map">🗺️ Google 地圖</a>
+                                ${actionButtons}
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    });
+                })
+                .catch((error) => {
+                    console.error("讀取資料失敗: ", error);
+                    container.innerHTML = '<p style="text-align:center; color:red;">讀取資料失敗，請檢查權限設定。</p>';
+                });
+        }
+
+        // 切換完成狀態
+        function toggleComplete(docId, status) {
+            db.collection("dating_places").doc(docId).update({
+                completed: status
+            })
+            .then(() => {
+                loadPlaces();
+            })
+            .catch((error) => {
+                console.error("更新狀態失敗: ", error);
+            });
+        }
+
+        // 刪除地點
+        function deletePlace(docId) {
+            if (confirm('確定要刪除這個地點嗎？')) {
+                db.collection("dating_places").doc(docId).delete()
+                    .then(() => {
+                        loadPlaces();
+                    })
+                    .catch((error) => {
+                        console.error("刪除失敗: ", error);
+                    });
+            }
+        }
+
+        // 防止 XSS 攻擊的簡單跳脫函式
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
