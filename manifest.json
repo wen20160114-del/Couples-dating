@@ -1,3 +1,11 @@
+{
+  "name": "我們的專屬口袋地圖",
+  "short_name": "口袋地圖",
+  "start_url": "/Couples-dating/index.html",
+  "scope": "/Couples-dating/",
+  "display": "standalone",
+  "background_color": "#ff9a9e",
+  "theme_color": "#ff758c",
   "icons": [
     {
       "src": "icon.png",
@@ -5,4 +13,4 @@
       "type": "image/png"
     }
   ]
-
+}
