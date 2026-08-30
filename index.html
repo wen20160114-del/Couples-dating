@@ -34,7 +34,7 @@
             align-items: center;
             padding: 20px;
             color: var(--text-color);
-            color-scheme: light; /* 強制淺色模式，避免深色模式變黑 */
+            color-scheme: light;
         }
 
         .container {
@@ -145,7 +145,7 @@
             margin-top: 8px;
         }
 
-        /* 列表與雙層分類群組樣式 */
+        /* 列表與群組樣式 */
         .list-container {
             flex-grow: 1;
             overflow-y: auto;
@@ -162,10 +162,17 @@
             font-weight: 700;
         }
 
+        .city-header {
+            font-size: 1.05rem;
+            color: #e65100;
+            margin: 14px 0 6px 8px;
+            font-weight: 600;
+        }
+
         .region-header {
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: #0288d1;
-            margin: 12px 0 6px 12px;
+            margin: 8px 0 4px 16px;
             font-weight: 600;
         }
 
@@ -175,7 +182,7 @@
             border-radius: 14px;
             padding: 16px;
             margin-bottom: 12px;
-            margin-left: 8px;
+            margin-left: 16px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.03);
             transition: transform 0.2s;
         }
@@ -230,6 +237,8 @@
                 <label>名稱：</label>
                 <input type="text" id="place-name" placeholder="例如：屋馬燒肉">
             </div>
+            
+            <!-- 大標：分類 -->
             <div class="form-group">
                 <label>分類 (大標)：</label>
                 <select id="place-category">
@@ -240,20 +249,41 @@
                     <option value="其他">其他</option>
                 </select>
             </div>
+            
+            <!-- 次標：縣市 -->
+            <div class="form-group">
+                <label>縣市 (次標)：</label>
+                <select id="place-city" onchange="updateDistricts()">
+                    <option value="臺中市">臺中市</option>
+                    <option value="臺北市">臺北市</option>
+                    <option value="新北市">新北市</option>
+                    <option value="桃園市">桃園市</option>
+                    <option value="臺南市">臺南市</option>
+                    <option value="高雄市">高雄市</option>
+                    <option value="基隆市">基隆市</option>
+                    <option value="新竹市">新竹市</option>
+                    <option value="嘉義市">嘉義市</option>
+                    <option value="苗栗縣">苗栗縣</option>
+                    <option value="彰化縣">彰化縣</option>
+                    <option value="南投縣">南投縣</option>
+                    <option value="宜蘭縣">宜蘭縣</option>
+                    <option value="花蓮縣">花蓮縣</option>
+                    <option value="臺東縣">臺東縣</option>
+                    <option value="屏東縣">屏東縣</option>
+                    <option value="澎湖縣">澎湖縣</option>
+                    <option value="金門縣">金門縣</option>
+                    <option value="連江縣">連江縣</option>
+                </select>
+            </div>
+
+            <!-- 小標：區域 (依照縣市自動變換) -->
             <div class="form-group">
                 <label>區域 (小標)：</label>
                 <select id="place-region">
-                    <option value="西屯區">西屯區</option>
-                    <option value="南屯區">南屯區</option>
-                    <option value="北屯區">北屯區</option>
-                    <option value="中區">中區</option>
-                    <option value="西區">西區</option>
-                    <option value="東區">東區</option>
-                    <option value="南區">南區</option>
-                    <option value="北區">北區</option>
-                    <option value="其他地區">其他地區</option>
+                    <!-- 動態載入 -->
                 </select>
             </div>
+
             <div class="form-group">
                 <label>備註 (其他補充)：</label>
                 <input type="text" id="place-memo" placeholder="例如：必吃花生豆花、停車方便">
@@ -283,7 +313,50 @@
     </div>
 
     <script>
-        // ==================== Firebase 專案設定 ====================
+        // 台灣各縣市與行政區對照表
+        const districtData = {
+            "臺中市": ["西屯區", "南屯區", "北屯區", "中區", "東區", "南區", "西區", "北區", "豐原區", "大里區", "太平區", "沙鹿區", "大甲區", "清水區", "梧棲區", "烏日區", "大肚區", "龍井區", "霧峰區", "大雅區", "神岡區", "大安區", "后里區", "石岡區", "東勢區", "和平區", "新社區"],
+            "臺北市": ["中正區", "大同區", "中山區", "松山區", "大安區", "萬華區", "信義區", "士林區", "北投區", "內湖區", "南港區", "文山區"],
+            "新北市": ["板橋區", "三重區", "中和區", "永和區", "新莊區", "新店區", "樹林區", "鶯歌區", "三峽區", "淡水區", "汐止區", "瑞芳區", "土城區", "蘆洲區", "五股區", "泰山區", "林口區", "深坑區", "石碇區", "坪林區", "三芝區", "石門區", "八里區", "平溪區", "雙溪區", "貢寮區", "金山區", "萬里區", "烏來區"],
+            "桃園市": ["桃園區", "中壢區", "大溪區", "楊梅區", "蘆竹區", "大園區", "龜山區", "八德區", "龍潭區", "平鎮區", "新屋區", "觀音區", "復興區"],
+            "臺南市": ["中西區", "東區", "南區", "北區", "安平區", "安南區", "永康區", "歸仁區", "新化區", "左鎮區", "玉井區", "楠西區", "南化區", "仁德區", "關廟區", "龍崎區", "官田區", "麻豆區", "佳里區", "西港區", "七股區", "將軍區", "學甲區", "北門區", "新營區", "後壁區", "白河區", "東山區", "六甲區", "下營區", "柳營區", "鹽水區", "善化區", "大內區", "安定區", "山上區"],
+            "高雄市": ["楠梓區", "左營區", "鼓山區", "三民區", "鹽埕區", "前金區", "新興區", "苓雅區", "前鎮區", "旗津區", "小港區", "鳳山區", "林園區", "大寮區", "大樹區", "大社區", "仁武區", "鳥松區", "岡山區", "橋頭區", "燕巢區", "田寮區", "阿蓮區", "路竹區", "湖內區", "茄萣區", "永安區", "彌陀區", "梓官區", "旗山區", "美濃區", "六龜區", "甲仙區", "杉林區", "內門區", "茂林區", "桃源區", "那瑪夏區"],
+            "基隆市": ["仁愛區", "信義區", "中正區", "中山區", "安樂區", "暖暖區", "七堵區"],
+            "新竹市": ["東區", "北區", "香山區"],
+            "嘉義市": ["東區", "西區"],
+            "苗栗縣": ["苗栗市", "頭份市", "竹南鎮", "後龍鎮", "通霄鎮", "苑裡鎮", "卓蘭鎮", "大湖鄉", "公館鄉", "銅鑼鄉", "南庄鄉", "頭屋鄉", "三義鄉", "西湖鄉", "造橋鄉", "三灣鄉", "獅潭鄉", "泰安鄉"],
+            "彰化縣": ["彰化市", "員林市", "和美鎮", "鹿港鎮", "溪湖鎮", "二林鎮", "田中鎮", "北斗鎮", "花壇鄉", "芬園鄉", "大村鄉", "埔鹽鄉", "埔心鄉", "永靖鄉", "社頭鄉", "二水鄉", "田尾鄉", "埤頭鄉", "芳苑鄉", "大城鄉", "竹塘鄉", "溪州鄉"],
+            "南投縣": ["南投市", "埔里鎮", "草屯鎮", "竹山鎮", "集集鎮", "名間鄉", "鹿谷鄉", "中寮鄉", "魚池鄉", "國姓鄉", "水里鄉", "信義鄉", "仁愛鄉"],
+            "宜蘭縣": ["宜蘭市", "羅東鎮", "蘇澳鎮", "頭城鎮", "礁溪鄉", "壯圍鄉", "員山鄉", "冬山鄉", "五結鄉", "三星鄉", "大同鄉", "南澳鄉"],
+            "花蓮縣": ["花蓮市", "鳳林鎮", "玉里鎮", "新城鄉", "吉安鄉", "壽豐鄉", "光復鄉", "豐濱鄉", "瑞穗鄉", "富里鄉", "秀林鄉", "萬榮鄉", "卓溪鄉"],
+            "臺東縣": ["臺東市", "成功鎮", "關山鎮", "長濱鄉", "池上鄉", "東河鄉", "太麻里鄉", "大武鄉", "綠島鄉", "蘭嶼鄉", "延平鄉", "海端鄉", "達仁鄉", "金峰鄉"],
+            "屏東縣": ["屏東市", "潮州鎮", "東港鎮", "恆春鎮", "萬丹鄉", "長治鄉", "麟洛鄉", "九如鄉", "里港鄉", "鹽埔鄉", "高樹鄉", "萬巒鄉", "內埔鄉", "竹田鄉", "新埤鄉", "枋寮鄉", "新園鄉", "崁頂鄉", "林邊鄉", "南州鄉", "佳冬鄉", "琉球鄉", "車城鄉", "滿州鄉", "枋山鄉", "三地門鄉", "霧臺鄉", "瑪家鄉", "泰武鄉", "來義鄉", "春日鄉", "獅子鄉", "牡丹鄉"],
+            "澎湖縣": ["馬公市", "湖西鄉", "白沙鄉", "西嶼鄉", "望安鄉", "七美鄉"],
+            "金門縣": ["金城鎮", "金湖鎮", "金沙鎮", "金寧鄉", "烈嶼鄉", "烏坵鄉"],
+            "連江縣": ["南竿鄉", "北竿鄉", "莒光鄉", "東引鄉"]
+        };
+
+        function updateDistricts() {
+            const citySelect = document.getElementById('place-city');
+            const regionSelect = document.getElementById('place-region');
+            const selectedCity = citySelect.value;
+            
+            regionSelect.innerHTML = '';
+            const districts = districtData[selectedCity] || ["其他"];
+            
+            districts.forEach(district => {
+                const option = document.createElement('option');
+                option.value = district;
+                option.textContent = district;
+                regionSelect.appendChild(option);
+            });
+        }
+
+        window.onload = function() {
+            updateDistricts();
+        };
+
+        // Firebase 專案設定
         const firebaseConfig = {
             apiKey: "AIzaSyAom-u5FTFI8B8ZWICdZ0YxqY2CuJ5eNFg",
             authDomain: "couples-dating-50cb0.firebaseapp.com",
@@ -293,11 +366,9 @@
             appId: "1:361607229257:web:5f8a740525dad3c62bb498"
         };
 
-        // 初始化 Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // 檢查連線狀態
         db.collection("dating_places").limit(1).get()
             .then(() => {
                 document.getElementById("connection-status").innerHTML = "🟢 已成功連線至雲端資料庫 (雙向同步中)";
@@ -307,7 +378,6 @@
                 console.error("Firebase connection error: ", error);
             });
 
-        // 頁面切換函式
         function switchPage(pageNum) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(`page-${pageNum}`).classList.add('active');
@@ -319,10 +389,10 @@
             }
         }
 
-        // 新增地點到 Firestore
         function addPlace() {
             const name = document.getElementById('place-name').value.trim();
             const category = document.getElementById('place-category').value;
+            const city = document.getElementById('place-city').value;
             const region = document.getElementById('place-region').value;
             const memo = document.getElementById('place-memo').value.trim();
 
@@ -334,6 +404,7 @@
             db.collection("dating_places").add({
                 name: name,
                 category: category,
+                city: city,
                 region: region,
                 memo: memo,
                 completed: false,
@@ -350,7 +421,7 @@
             });
         }
 
-        // 載入並依「大標(分類)」與「小標(區域)」雙層群組顯示資料
+        // 載入並依「大標(分類) ➔ 次標(縣市) ➔ 小標(區域)」三層架構顯示
         function loadPlaces(isCompleted) {
             const containerId = isCompleted ? 'completed-container' : 'wishlist-container';
             const container = document.getElementById(containerId);
@@ -365,68 +436,74 @@
                         return;
                     }
 
-                    // 1. 建立雙層結構: groups[category][region] = [items...]
+                    // 三層分組結構: groups[category][city][region] = [items...]
                     const groups = {};
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
                         data.id = doc.id;
                         const cat = data.category || '未分類';
+                        const city = data.city || '臺中市';
                         const reg = data.region || '其他區域';
                         
-                        if (!groups[cat]) {
-                            groups[cat] = {};
-                        }
-                        if (!groups[cat][reg]) {
-                            groups[cat][reg] = [];
-                        }
-                        groups[cat][reg].push(data);
+                        if (!groups[cat]) groups[cat] = {};
+                        if (!groups[cat][city]) groups[cat][city] = {};
+                        if (!groups[cat][city][reg]) groups[cat][city][reg] = [];
+                        
+                        groups[cat][city][reg].push(data);
                     });
 
                     container.innerHTML = '';
 
-                    // 2. 渲染畫面
-                    for (const [categoryName, regions] of Object.entries(groups)) {
+                    // 渲染三層結構
+                    for (const [categoryName, cities] of Object.entries(groups)) {
                         const catHeader = document.createElement('div');
                         catHeader.className = 'category-header';
                         catHeader.innerHTML = `📌 ${categoryName}`;
                         container.appendChild(catHeader);
 
-                        for (const [regionName, items] of Object.entries(regions)) {
-                            const regHeader = document.createElement('div');
-                            regHeader.className = 'region-header';
-                            regHeader.innerHTML = `📍 ${regionName}`;
-                            container.appendChild(regHeader);
+                        for (const [cityName, regions] of Object.entries(cities)) {
+                            const cityHeader = document.createElement('div');
+                            cityHeader.className = 'city-header';
+                            cityHeader.innerHTML = `🏙️ ${cityName}`;
+                            container.appendChild(cityHeader);
 
-                            items.forEach(item => {
-                                const card = document.createElement('div');
-                                card.className = 'place-card';
-                                
-                                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.region + ' ' + (item.memo || ''))}`;
-                                
-                                let actionButtons = '';
-                                if (!isCompleted) {
-                                    actionButtons = `
-                                        <button class="btn-primary" onclick="window.open('${mapsUrl}', '_blank')">🗺️ Google 地圖</button>
-                                        <button class="btn-success" onclick="toggleStatus('${item.id}', true)">✔️ 標記已去過</button>
-                                        <button class="btn-danger" onclick="deletePlace('${item.id}')">🗑️ 刪除</button>
-                                    `;
-                                } else {
-                                    actionButtons = `
-                                        <button class="btn-primary" onclick="window.open('${mapsUrl}', '_blank')">🗺️ Google 地圖</button>
-                                        <button class="btn-nav" onclick="toggleStatus('${item.id}', false)">↩️ 移回想去</button>
-                                        <button class="btn-danger" onclick="deletePlace('${item.id}')">🗑️ 刪除</button>
-                                    `;
-                                }
+                            for (const [regionName, items] of Object.entries(regions)) {
+                                const regHeader = document.createElement('div');
+                                regHeader.className = 'region-header';
+                                regHeader.innerHTML = `📍 ${regionName}`;
+                                container.appendChild(regHeader);
 
-                                card.innerHTML = `
-                                    <div class="place-title">${item.name}</div>
-                                    <div class="place-memo">📝 備註：${item.memo || '無'}</div>
-                                    <div class="card-actions">
-                                        ${actionButtons}
-                                    </div>
-                                `;
-                                container.appendChild(card);
-                            });
+                                items.forEach(item => {
+                                    const card = document.createElement('div');
+                                    card.className = 'place-card';
+                                    
+                                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.city + item.region + ' ' + (item.memo || ''))}`;
+                                    
+                                    let actionButtons = '';
+                                    if (!isCompleted) {
+                                        actionButtons = `
+                                            <button class="btn-primary" onclick="window.open('${mapsUrl}', '_blank')">🗺️ Google 地圖</button>
+                                            <button class="btn-success" onclick="toggleStatus('${item.id}', true)">✔️ 標記已去過</button>
+                                            <button class="btn-danger" onclick="deletePlace('${item.id}')">🗑️ 刪除</button>
+                                        `;
+                                    } else {
+                                        actionButtons = `
+                                            <button class="btn-primary" onclick="window.open('${mapsUrl}', '_blank')">🗺️ Google 地圖</button>
+                                            <button class="btn-nav" onclick="toggleStatus('${item.id}', false)">↩️ 移回想去</button>
+                                            <button class="btn-danger" onclick="deletePlace('${item.id}')">🗑️ 刪除</button>
+                                        `;
+                                    }
+
+                                    card.innerHTML = `
+                                        <div class="place-title">${item.name}</div>
+                                        <div class="place-memo">📝 備註：${item.memo || '無'}</div>
+                                        <div class="card-actions">
+                                            ${actionButtons}
+                                        </div>
+                                    `;
+                                    container.appendChild(card);
+                                });
+                            }
                         }
                     }
                 })
@@ -436,7 +513,6 @@
                 });
         }
 
-        // 切換完成狀態
         function toggleStatus(id, newStatus) {
             db.collection("dating_places").doc(id).update({
                 completed: newStatus
@@ -453,7 +529,6 @@
             });
         }
 
-        // 刪除紀錄
         function deletePlace(id) {
             if (confirm('確定要刪除這個地點嗎？')) {
                 db.collection("dating_places").doc(id).delete()
