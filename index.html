@@ -9,15 +9,18 @@
         .card { background: #fff; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         input, select, button { width: 100%; padding: 10px; margin: 5px 0 15px 0; box-sizing: border-box; }
         button { background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .secondary-btn { background: #6c757d; margin-top: 5px; }
         .category-section { margin-top: 20px; }
         ul { padding-left: 20px; }
         li { margin-bottom: 8px; }
         .delete-btn { background: #dc3545; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 12px; margin-left: 5px; width: auto; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-<div class="card">
+<!-- 第一頁：新增表單 -->
+<div id="page-home" class="card">
     <h2>新增想去的地點</h2>
     <form id="placeForm">
         <label>名稱：</label>
@@ -36,43 +39,57 @@
         
         <button type="submit">新增記錄</button>
     </form>
+    <button class="secondary-btn" onclick="switchPage('list')">查看我的口袋名單 ➔</button>
 </div>
 
-<div class="card">
-    <h2>我的口袋名單</h2>
+<!-- 第二頁：清單列表 -->
+<div id="page-list" class="card hidden">
+    <h2>📌 我的口袋名單</h2>
+    
     <div class="category-section">
-        <h3>📌 主食</h3>
+        <h3>主食</h3>
         <ul id="list-main"></ul>
     </div>
     <div class="category-section">
-        <h3>📌 點心</h3>
+        <h3>點心</h3>
         <ul id="list-snack"></ul>
     </div>
     <div class="category-section">
-        <h3>📌 飲料</h3>
+        <h3>飲料</h3>
         <ul id="list-drink"></ul>
     </div>
     <div class="category-section">
-        <h3>📌 風景</h3>
+        <h3>風景</h3>
         <ul id="list-scenery"></ul>
     </div>
+
+    <button class="secondary-btn" onclick="switchPage('home')">⬅ 返回新增頁面</button>
 </div>
 
 <script>
     const categories = { 'main': '主食', 'snack': '點心', 'drink': '飲料', 'scenery': '風景' };
     
-    // 讀取資料
     function getPlaces() {
         return JSON.parse(localStorage.getItem('my_places') || '[]');
     }
 
-    // 儲存資料
     function savePlaces(places) {
         localStorage.setItem('my_places', JSON.stringify(places));
         render();
     }
 
-    // 畫面渲染
+    // 頁面切換控制
+    window.switchPage = function(page) {
+        if (page === 'home') {
+            document.getElementById('page-home').classList.remove('hidden');
+            document.getElementById('page-list').classList.add('hidden');
+        } else {
+            document.getElementById('page-home').classList.add('hidden');
+            document.getElementById('page-list').classList.remove('hidden');
+            render();
+        }
+    }
+
     function render() {
         const places = getPlaces();
         for (let key in categories) {
@@ -83,8 +100,7 @@
             if (filtered.length === 0) {
                 ul.innerHTML = '<li style="color: #888;">暫無記錄</li>';
             } else {
-                filtered.forEach((p, index) => {
-                    // 找出原始陣列的真實 index 以便刪除
+                filtered.forEach((p) => {
                     const realIndex = places.findIndex(item => item === p);
                     const li = document.createElement('li');
                     li.innerHTML = `<strong>${p.name}</strong> - <small>${p.note}</small> <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
@@ -94,14 +110,12 @@
         }
     }
 
-    // 刪除功能
     window.deletePlace = function(index) {
         let places = getPlaces();
         places.splice(index, 1);
         savePlaces(places);
     }
 
-    // 表單提交
     document.getElementById('placeForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const name = document.getElementById('name').value;
@@ -113,10 +127,8 @@
         savePlaces(places);
 
         document.getElementById('placeForm').reset();
+        alert('新增成功！');
     });
-
-    // 初始化載入
-    render();
 </script>
 
 </body>
