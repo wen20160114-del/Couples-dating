@@ -12,8 +12,9 @@
         .secondary-btn { background: #6c757d; margin-top: 5px; }
         .map-btn { background: #28a745; padding: 2px 6px; font-size: 12px; width: auto; margin-left: 5px; text-decoration: none; display: inline-block; border-radius: 3px; color: white; }
         .done-btn { background: #17a2b8; padding: 2px 6px; font-size: 12px; width: auto; margin-left: 5px; border-radius: 3px; color: white; cursor: pointer; border: none; }
-        .category-section { margin-top: 20px; }
-        ul { padding-left: 20px; }
+        .category-section { margin-top: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .sub-region-title { font-size: 15px; color: #007bff; margin: 10px 0 5px 0; font-weight: bold; }
+        ul { padding-left: 20px; margin-top: 5px; }
         li { margin-bottom: 10px; line-height: 1.5; }
         .delete-btn { background: #dc3545; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 12px; margin-left: 5px; width: auto; }
         .hidden { display: none; }
@@ -41,7 +42,7 @@
         <input type="url" id="mapUrl" placeholder="有網址可貼，沒填也沒關係！">
         <small class="hint">💡 沒填寫網址時，系統會自動用店名幫你產生 Google 地圖搜尋鍵。</small>
         
-        <label>備註：</label>
+        <label>備註（建議包含地區，例如：南屯區、西區）：</label>
         <input type="text" id="note" placeholder="例如：南屯區、必吃花生豆花">
         
         <button type="submit">新增記錄</button>
@@ -54,22 +55,10 @@
 <div id="page-list" class="card hidden">
     <h2>📌 我的口袋名單（想去）</h2>
     
-    <div class="category-section">
-        <h3>主食</h3>
-        <ul id="list-main"></ul>
-    </div>
-    <div class="category-section">
-        <h3>點心</h3>
-        <ul id="list-snack"></ul>
-    </div>
-    <div class="category-section">
-        <h3>飲料</h3>
-        <ul id="list-drink"></ul>
-    </div>
-    <div class="category-section">
-        <h3>風景</h3>
-        <ul id="list-scenery"></ul>
-    </div>
+    <div class="category-section"><h3>主食</h3><div id="list-main"></div></div>
+    <div class="category-section"><h3>點心</h3><div id="list-snack"></div></div>
+    <div class="category-section"><h3>飲料</h3><div id="list-drink"></div></div>
+    <div class="category-section"><h3>風景</h3><div id="list-scenery"></div></div>
 
     <button class="secondary-btn" onclick="switchPage('home')">⬅ 返回新增頁面</button>
 </div>
@@ -78,22 +67,10 @@
 <div id="page-done" class="card hidden">
     <h2>🏆 已去過的地點</h2>
     
-    <div class="category-section">
-        <h3>主食</h3>
-        <ul id="list-done-main"></ul>
-    </div>
-    <div class="category-section">
-        <h3>點心</h3>
-        <ul id="list-done-snack"></ul>
-    </div>
-    <div class="category-section">
-        <h3>飲料</h3>
-        <ul id="list-done-drink"></ul>
-    </div>
-    <div class="category-section">
-        <h3>風景</h3>
-        <ul id="list-done-scenery"></ul>
-    </div>
+    <div class="category-section"><h3>主食</h3><div id="list-done-main"></div></div>
+    <div class="category-section"><h3>點心</h3><div id="list-done-snack"></div></div>
+    <div class="category-section"><h3>飲料</h3><div id="list-done-drink"></div></div>
+    <div class="category-section"><h3>風景</h3><div id="list-done-scenery"></div></div>
 
     <button class="secondary-btn" onclick="switchPage('home')">⬅ 返回新增頁面</button>
     <button class="secondary-btn" onclick="switchPage('list')">⬅ 返回想去清單</button>
@@ -127,60 +104,77 @@
         }
     }
 
+    // 自動從備註中萃取地區（例如找尋「O區」或直接用備註前幾個字，若無則歸類為「未分類地區」）
+    function extractRegion(note) {
+        if (!note) return '未分類地區';
+        // 尋找常見的區名（例如：南屯區、西區、北區等）
+        const match = note.match(/[\u4e05-\u9fa5]+[區市鎮鄉]/);
+        if (match) {
+            return match[0];
+        }
+        return '其他地區';
+    }
+
+    function renderCategoryContent(containerId, filteredPlaces, isDonePage) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+
+        if (filteredPlaces.length === 0) {
+            container.innerHTML = '<ul style="padding-left: 20px;"><li style="color: #888;">暫無記錄</li></ul>';
+            return;
+        }
+
+        // 依照地區（Region）進行二次分組
+        let regionGroups = {};
+        filteredPlaces.forEach(p => {
+            let region = extractRegion(p.note);
+            if (!regionGroups[region]) {
+                regionGroups[region] = [];
+            }
+            regionGroups[region].push(p);
+        });
+
+        // 針對每個地區產生子群組
+        for (let region in regionGroups) {
+            let regionDiv = document.createElement('div');
+            regionDiv.innerHTML = `<div class="sub-region-title">📍 ${region}</div>`;
+            
+            let ul = document.createElement('ul');
+            regionGroups[region].forEach(p => {
+                const realIndex = getPlaces().findIndex(item => item === p);
+                const li = document.createElement('li');
+                
+                let mapLink = p.mapUrl && p.mapUrl.trim() !== '' 
+                    ? p.mapUrl 
+                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
+
+                let mapButtonHtml = `<a href="${mapLink}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
+                let actionBtnHtml = isDonePage 
+                    ? `<button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`
+                    : `<button class="done-btn" onclick="markAsDone(${realIndex})">✔️ 完成</button>
+                       <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
+
+                li.innerHTML = `<strong>${p.name}</strong> ${mapButtonHtml} - <small>${p.note || ''}</small> ${actionBtnHtml}`;
+                ul.appendChild(li);
+            });
+            regionDiv.appendChild(ul);
+            container.appendChild(regionDiv);
+        }
+    }
+
     function render() {
         const places = getPlaces();
         
         // 1. 渲染第二頁（想去清單）
         for (let key in categories) {
-            const ul = document.getElementById(`list-${key}`);
-            ul.innerHTML = '';
             const filtered = places.filter(p => p.category === key && p.status !== 'done');
-            
-            if (filtered.length === 0) {
-                ul.innerHTML = '<li style="color: #888;">暫無記錄</li>';
-            } else {
-                filtered.forEach((p) => {
-                    const realIndex = places.findIndex(item => item === p);
-                    const li = document.createElement('li');
-                    
-                    let mapLink = p.mapUrl && p.mapUrl.trim() !== '' 
-                        ? p.mapUrl 
-                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
-
-                    let mapButtonHtml = `<a href="${mapLink}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
-
-                    li.innerHTML = `<strong>${p.name}</strong> ${mapButtonHtml} - <small>${p.note || ''}</small> 
-                                    <button class="done-btn" onclick="markAsDone(${realIndex})">✔️ 完成</button>
-                                    <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
-                    ul.appendChild(li);
-                });
-            }
+            renderCategoryContent(`list-${key}`, filtered, false);
         }
 
-        // 2. 渲染第三頁（已完成清單 - 依四大分類顯示）
+        // 2. 渲染第三頁（已完成清單）
         for (let key in categories) {
-            const doneUl = document.getElementById(`list-done-${key}`);
-            doneUl.innerHTML = '';
             const doneFiltered = places.filter(p => p.category === key && p.status === 'done');
-
-            if (doneFiltered.length === 0) {
-                doneUl.innerHTML = '<li style="color: #888;">暫無記錄</li>';
-            } else {
-                doneFiltered.forEach((p) => {
-                    const realIndex = places.findIndex(item => item === p);
-                    const li = document.createElement('li');
-                    
-                    let mapLink = p.mapUrl && p.mapUrl.trim() !== '' 
-                        ? p.mapUrl 
-                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
-
-                    let mapButtonHtml = `<a href="${mapLink}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
-
-                    li.innerHTML = `<strong>${p.name}</strong> ${mapButtonHtml} - <small>${p.note || ''}</small> 
-                                    <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
-                    doneUl.appendChild(li);
-                });
-            }
+            renderCategoryContent(`list-done-${key}`, doneFiltered, true);
         }
     }
 
