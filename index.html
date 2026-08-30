@@ -5,27 +5,87 @@
     <title>我的口袋地圖清單</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; max-width: 600px; margin: 20px auto; padding: 0 15px; background: #f9f9f9; }
-        .card { background: #fff; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        input, select, button { width: 100%; padding: 10px; margin: 5px 0 15px 0; box-sizing: border-box; }
-        button { background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .secondary-btn { background: #6c757d; margin-top: 5px; }
-        .map-btn { background: #28a745; padding: 2px 6px; font-size: 12px; width: auto; margin-left: 5px; text-decoration: none; display: inline-block; border-radius: 3px; color: white; }
-        .done-btn { background: #17a2b8; padding: 2px 6px; font-size: 12px; width: auto; margin-left: 5px; border-radius: 3px; color: white; cursor: pointer; border: none; }
-        .category-section { margin-top: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .sub-region-title { font-size: 15px; color: #007bff; margin: 10px 0 5px 0; font-weight: bold; }
-        ul { padding-left: 20px; margin-top: 5px; }
-        li { margin-bottom: 10px; line-height: 1.5; }
-        .delete-btn { background: #dc3545; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 12px; margin-left: 5px; width: auto; }
+        * { box-sizing: border-box; }
+        body { 
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; 
+            max-width: 600px; 
+            margin: 40px auto; 
+            padding: 0 20px; 
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); 
+            min-height: 100vh;
+            color: #333;
+        }
+        .card { 
+            background: #ffffff; 
+            padding: 25px; 
+            margin-bottom: 20px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08); 
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h2 { margin-top: 0; color: #1e293b; font-size: 22px; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; color: #475569; font-size: 14px; }
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 4px 0 16px 0; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 8px; 
+            font-size: 15px; 
+            transition: all 0.2s;
+            background: #f8fafc;
+        }
+        input:focus, select:focus { 
+            outline: none; 
+            border-color: #3b82f6; 
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); 
+        }
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 6px 0; 
+            background: #3b82f6; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: 600;
+            transition: background 0.2s, transform 0.1s;
+        }
+        button:hover { background: #2563eb; }
+        button:active { transform: scale(0.98); }
+        .secondary-btn { background: #64748b; }
+        .secondary-btn:hover { background: #475569; }
+        .success-btn { background: #10b981; }
+        .success-btn:hover { background: #059669; }
+        
+        .map-btn { background: #10b981; padding: 4px 10px; font-size: 13px; width: auto; margin-left: 6px; text-decoration: none; display: inline-block; border-radius: 6px; color: white; font-weight: 500; }
+        .map-btn:hover { background: #059669; }
+        .done-btn { background: #0ea5e9; padding: 4px 10px; font-size: 13px; width: auto; margin-left: 6px; border-radius: 6px; color: white; cursor: pointer; border: none; font-weight: 500; }
+        .done-btn:hover { background: #0284c7; }
+        .delete-btn { background: #ef4444; color: white; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 13px; margin-left: 6px; width: auto; font-weight: 500; }
+        .delete-btn:hover { background: #dc2626; }
+
+        .category-section { margin-top: 24px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; }
+        .category-section h3 { margin: 0 0 10px 0; font-size: 17px; color: #334155; border-left: 4px solid #3b82f6; padding-left: 8px; }
+        .sub-region-title { font-size: 14px; color: #2563eb; margin: 12px 0 6px 0; font-weight: bold; background: #e0f2fe; display: inline-block; padding: 2px 8px; border-radius: 4px; }
+        ul { padding-left: 20px; margin: 5px 0; }
+        li { margin-bottom: 10px; line-height: 1.6; color: #334155; }
         .hidden { display: none; }
-        .hint { font-size: 12px; color: #666; margin-top: -10px; margin-bottom: 15px; display: block; }
+        .hint { font-size: 12px; color: #64748b; margin-top: -12px; margin-bottom: 16px; display: block; }
     </style>
 </head>
 <body>
 
 <!-- 第一頁：新增表單 -->
 <div id="page-home" class="card">
-    <h2>新增想去的地點</h2>
+    <h2>📍 新增想去的地點</h2>
     <form id="placeForm">
         <label>名稱：</label>
         <input type="text" id="name" required placeholder="例如：馬岡豆花">
@@ -45,10 +105,10 @@
         <label>備註（建議包含地區，例如：南屯區、西區）：</label>
         <input type="text" id="note" placeholder="例如：南屯區、必吃花生豆花">
         
-        <button type="submit">新增記錄</button>
+        <button type="submit">✨ 新增記錄</button>
     </form>
-    <button class="secondary-btn" onclick="switchPage('list')">查看我的口袋名單（想去） ➔</button>
-    <button class="secondary-btn" style="background: #28a745;" onclick="switchPage('done')">查看已去過 / 已完成清單 🏆</button>
+    <button class="secondary-btn" onclick="switchPage('list')">📌 查看我的口袋名單（想去）</button>
+    <button class="success-btn" onclick="switchPage('done')">🏆 查看已去過 / 已完成清單</button>
 </div>
 
 <!-- 第二頁：想去清單列表 -->
@@ -60,7 +120,7 @@
     <div class="category-section"><h3>飲料</h3><div id="list-drink"></div></div>
     <div class="category-section"><h3>風景</h3><div id="list-scenery"></div></div>
 
-    <button class="secondary-btn" onclick="switchPage('home')">⬅ 返回新增頁面</button>
+    <button class="secondary-btn" style="margin-top: 20px;" onclick="switchPage('home')">⬅ 返回新增頁面</button>
 </div>
 
 <!-- 第三頁：已完成（已去過）清單 -->
@@ -72,7 +132,7 @@
     <div class="category-section"><h3>飲料</h3><div id="list-done-drink"></div></div>
     <div class="category-section"><h3>風景</h3><div id="list-done-scenery"></div></div>
 
-    <button class="secondary-btn" onclick="switchPage('home')">⬅ 返回新增頁面</button>
+    <button class="secondary-btn" style="margin-top: 20px;" onclick="switchPage('home')">⬅ 返回新增頁面</button>
     <button class="secondary-btn" onclick="switchPage('list')">⬅ 返回想去清單</button>
 </div>
 
@@ -81,7 +141,6 @@
     
     function getPlaces() {
         let places = JSON.parse(localStorage.getItem('my_places') || '[]');
-        // 自動檢查舊資料，如果沒有 id 就幫它補上一個
         let updated = false;
         places.forEach((p, idx) => {
             if (!p.id) {
@@ -130,7 +189,7 @@
         container.innerHTML = '';
 
         if (filteredPlaces.length === 0) {
-            container.innerHTML = '<ul style="padding-left: 20px;"><li style="color: #888;">暫無記錄</li></ul>';
+            container.innerHTML = '<ul style="padding-left: 20px; margin:0;"><li style="color: #94a3b8; list-style: none;">暫無記錄</li></ul>';
             return;
         }
 
@@ -161,7 +220,7 @@
                     : `<button class="done-btn" onclick="markAsDone('${p.id}')">✔️ 完成</button>
                        <button class="delete-btn" onclick="deletePlace('${p.id}')">刪除</button>`;
 
-                li.innerHTML = `<strong>${p.name}</strong> ${mapButtonHtml} - <small>${p.note || ''}</small> ${actionBtnHtml}`;
+                li.innerHTML = `<strong>${p.name}</strong> ${mapButtonHtml} <span style="color:#64748b;">- ${p.note || ''}</span> ${actionBtnHtml}`;
                 ul.appendChild(li);
             });
             regionDiv.appendChild(ul);
@@ -189,7 +248,6 @@
         if (place) {
             place.status = 'done';
             savePlaces(places);
-            alert('太棒了！已移至「已去過」清單 🏆');
         }
     }
 
@@ -220,7 +278,7 @@
         savePlaces(places);
 
         document.getElementById('placeForm').reset();
-        alert('新增成功！');
+        alert('✨ 新增成功！');
     });
 </script>
 
