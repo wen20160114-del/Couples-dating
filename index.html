@@ -157,7 +157,7 @@
         .list-container {
             flex-grow: 1;
             overflow-y: auto;
-            max-height: 420px;
+            max-height: 360px;
             padding-right: 4px;
         }
 
@@ -239,7 +239,7 @@
             
             <!-- 大標：分類 -->
             <div class="form-group">
-                <label>分類 ：</label>
+                <label>分類：</label>
                 <select id="place-category">
                     <option value="主食">主食</option>
                     <option value="點心">點心</option>
@@ -251,7 +251,7 @@
             
             <!-- 次標：縣市 -->
             <div class="form-group">
-                <label>縣市 ：</label>
+                <label>縣市：</label>
                 <select id="place-city" onchange="updateDistricts()">
                     <option value="臺中市">臺中市</option>
                     <option value="臺北市">臺北市</option>
@@ -292,24 +292,25 @@
             <button class="btn-nav" onclick="openMenu(true)">🏆 查看已去過 / 已完成清單</button>
         </div>
 
-        <!-- 頁面 2：分類選單頁 (想去 / 已完成 的四大分類按鈕) -->
+        <!-- 頁面 2：分類選單頁 -->
         <div id="page-2" class="page">
             <h2 id="menu-title">📌 選擇分類</h2>
             <button class="btn-category" onclick="selectCategory('主食')">🍜 主食</button>
-            <button class="btn-category" onclick="selectCategory('點心')">🧋 點心</button>
-            <button class="btn-category" onclick="selectCategory('飲料')">🎡 飲料</button>
+            <button class="btn-category" onclick="selectCategory('點心')">🧁 點心</button>
+            <button class="btn-category" onclick="selectCategory('飲料')">🧋 飲料</button>
             <button class="btn-category" onclick="selectCategory('景點')">🌿 景點</button>
             <button class="btn-category" onclick="selectCategory('其他')">⭐ 其他</button>
-            <button class="btn-nav" style="margin-top: 30px;" onclick="switchPage(1)">⬅️ 返回新增頁面</button>
+            <button class="btn-nav" style="margin-top: 20px;" onclick="switchPage(1)">⬅️ 返回新增頁面</button>
         </div>
 
-        <!-- 頁面 3：內容列表頁 (呈現特定狀態與特定分類的詳細清單) -->
+        <!-- 頁面 3：內容列表頁 -->
         <div id="page-3" class="page">
             <h2 id="list-page-title">📌 詳細清單</h2>
             <div id="list-container" class="list-container">
                 <div class="empty-state">載入中...</div>
             </div>
-            <button class="btn-nav" onclick="switchPage(2)">⬅️ 返回分類選單</button>
+            <button class="btn-nav" style="margin-top: 15px;" onclick="switchPage(2)">⬅️ 返回上一頁 (分類選單)</button>
+            <button class="btn-primary" style="margin-top: 8px;" onclick="switchPage(1)">🏠 返回主頁</button>
         </div>
     </div>
 
@@ -379,7 +380,6 @@
                 console.error("Firebase connection error: ", error);
             });
 
-        // 當前瀏覽狀態紀錄
         let currentIsCompleted = false;
         let currentCategory = '';
 
@@ -388,14 +388,12 @@
             document.getElementById(`page-${pageNum}`).classList.add('active');
         }
 
-        // 點擊「口袋名單」或「已完成」後，進入分類選單頁
         function openMenu(isCompleted) {
             currentIsCompleted = isCompleted;
             document.getElementById('menu-title').textContent = isCompleted ? "🏆 已完成清單 - 選擇分類" : "📌 口袋名單 - 選擇分類";
             switchPage(2);
         }
 
-        // 點擊某個分類按鈕後，進入詳細清單頁
         function selectCategory(categoryName) {
             currentCategory = categoryName;
             document.getElementById('list-page-title').textContent = `${currentIsCompleted ? '🏆' : '📌'} ${categoryName}`;
@@ -436,7 +434,6 @@
             });
         }
 
-        // 載入特定狀態與特定分類的資料 (次標縣市 ➔ 小標區域)
         function loadFilteredPlaces() {
             const container = document.getElementById('list-container');
             container.innerHTML = '<div class="empty-state">載入中...</div>';
@@ -451,7 +448,6 @@
                         return;
                     }
 
-                    // 二層分組結構: groups[city][region] = [items...]
                     const groups = {};
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
@@ -467,7 +463,6 @@
 
                     container.innerHTML = '';
 
-                    // 渲染兩層結構 (次標縣市 ➔ 小標區域)
                     for (const [cityName, regions] of Object.entries(groups)) {
                         const cityHeader = document.createElement('div');
                         cityHeader.className = 'city-header';
