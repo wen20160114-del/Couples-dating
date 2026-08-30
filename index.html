@@ -145,21 +145,20 @@
             margin-top: 8px;
         }
 
+        .btn-category {
+            background: #fff0f3;
+            color: #ff5277;
+            border: 2px solid #ff758c;
+            margin-top: 10px;
+            font-size: 1.1rem;
+        }
+
         /* 列表與群組樣式 */
         .list-container {
             flex-grow: 1;
             overflow-y: auto;
             max-height: 420px;
             padding-right: 4px;
-        }
-
-        .category-header {
-            font-size: 1.2rem;
-            color: #ff5277;
-            margin: 20px 0 10px 4px;
-            padding-bottom: 6px;
-            border-bottom: 2px solid #ffe6eb;
-            font-weight: 700;
         }
 
         .city-header {
@@ -240,7 +239,7 @@
             
             <!-- 大標：分類 -->
             <div class="form-group">
-                <label>分類 (大標)：</label>
+                <label>分類 ：</label>
                 <select id="place-category">
                     <option value="主食">主食</option>
                     <option value="點心">點心</option>
@@ -252,7 +251,7 @@
             
             <!-- 次標：縣市 -->
             <div class="form-group">
-                <label>縣市 (次標)：</label>
+                <label>縣市 ：</label>
                 <select id="place-city" onchange="updateDistricts()">
                     <option value="臺中市">臺中市</option>
                     <option value="臺北市">臺北市</option>
@@ -276,9 +275,9 @@
                 </select>
             </div>
 
-            <!-- 小標：區域 (依照縣市自動變換) -->
+            <!-- 小標：區域 -->
             <div class="form-group">
-                <label>區域 (小標)：</label>
+                <label>區域 ：</label>
                 <select id="place-region">
                     <!-- 動態載入 -->
                 </select>
@@ -289,26 +288,28 @@
                 <input type="text" id="place-memo" placeholder="例如：必吃花生豆花、停車方便">
             </div>
             <button class="btn-primary" onclick="addPlace()">✨ 新增記錄到雲端</button>
-            <button class="btn-nav" onclick="switchPage(2)">📌 查看我們的口袋名單 (想去)</button>
-            <button class="btn-nav" onclick="switchPage(3)">🏆 查看已去過 / 已完成清單</button>
+            <button class="btn-nav" onclick="openMenu(false)">📌 查看我們的口袋名單 (想去)</button>
+            <button class="btn-nav" onclick="openMenu(true)">🏆 查看已去過 / 已完成清單</button>
         </div>
 
-        <!-- 頁面 2：想去清單頁 -->
+        <!-- 頁面 2：分類選單頁 (想去 / 已完成 的四大分類按鈕) -->
         <div id="page-2" class="page">
-            <h2>📌 我們的口袋名單 (想去)</h2>
-            <div id="wishlist-container" class="list-container">
-                <div class="empty-state">載入中...</div>
-            </div>
-            <button class="btn-nav" onclick="switchPage(1)">⬅️ 返回新增頁面</button>
+            <h2 id="menu-title">📌 選擇分類</h2>
+            <button class="btn-category" onclick="selectCategory('主食')">🍜 主食</button>
+            <button class="btn-category" onclick="selectCategory('點心')">🧋 點心</button>
+            <button class="btn-category" onclick="selectCategory('飲料')">🎡 飲料</button>
+            <button class="btn-category" onclick="selectCategory('景點')">🌿 景點</button>
+            <button class="btn-category" onclick="selectCategory('其他')">⭐ 其他</button>
+            <button class="btn-nav" style="margin-top: 30px;" onclick="switchPage(1)">⬅️ 返回新增頁面</button>
         </div>
 
-        <!-- 頁面 3：已完成清單頁 -->
+        <!-- 頁面 3：內容列表頁 (呈現特定狀態與特定分類的詳細清單) -->
         <div id="page-3" class="page">
-            <h2>🏆 已去過 / 已完成清單</h2>
-            <div id="completed-container" class="list-container">
+            <h2 id="list-page-title">📌 詳細清單</h2>
+            <div id="list-container" class="list-container">
                 <div class="empty-state">載入中...</div>
             </div>
-            <button class="btn-nav" onclick="switchPage(1)">⬅️ 返回新增頁面</button>
+            <button class="btn-nav" onclick="switchPage(2)">⬅️ 返回分類選單</button>
         </div>
     </div>
 
@@ -378,15 +379,28 @@
                 console.error("Firebase connection error: ", error);
             });
 
+        // 當前瀏覽狀態紀錄
+        let currentIsCompleted = false;
+        let currentCategory = '';
+
         function switchPage(pageNum) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(`page-${pageNum}`).classList.add('active');
-            
-            if (pageNum === 2) {
-                loadPlaces(false);
-            } else if (pageNum === 3) {
-                loadPlaces(true);
-            }
+        }
+
+        // 點擊「口袋名單」或「已完成」後，進入分類選單頁
+        function openMenu(isCompleted) {
+            currentIsCompleted = isCompleted;
+            document.getElementById('menu-title').textContent = isCompleted ? "🏆 已完成清單 - 選擇分類" : "📌 口袋名單 - 選擇分類";
+            switchPage(2);
+        }
+
+        // 點擊某個分類按鈕後，進入詳細清單頁
+        function selectCategory(categoryName) {
+            currentCategory = categoryName;
+            document.getElementById('list-page-title').textContent = `${currentIsCompleted ? '🏆' : '📌'} ${categoryName}`;
+            switchPage(3);
+            loadFilteredPlaces();
         }
 
         function addPlace() {
@@ -414,96 +428,88 @@
                 alert('✨ 成功新增到雲端口袋名單！');
                 document.getElementById('place-name').value = '';
                 document.getElementById('place-memo').value = '';
-                switchPage(2);
+                openMenu(false);
+                selectCategory(category);
             })
             .catch((error) => {
                 alert('新增失敗：' + error.message);
             });
         }
 
-        // 載入並依「大標(分類) ➔ 次標(縣市) ➔ 小標(區域)」三層架構顯示
-        function loadPlaces(isCompleted) {
-            const containerId = isCompleted ? 'completed-container' : 'wishlist-container';
-            const container = document.getElementById(containerId);
+        // 載入特定狀態與特定分類的資料 (次標縣市 ➔ 小標區域)
+        function loadFilteredPlaces() {
+            const container = document.getElementById('list-container');
             container.innerHTML = '<div class="empty-state">載入中...</div>';
 
             db.collection("dating_places")
-                .where("completed", "==", isCompleted)
+                .where("completed", "==", currentIsCompleted)
+                .where("category", "==", currentCategory)
                 .get()
                 .then((querySnapshot) => {
                     if (querySnapshot.empty) {
-                        container.innerHTML = '<div class="empty-state">這裡目前沒有資料喔！</div>';
+                        container.innerHTML = '<div class="empty-state">這裡目前沒有這個分類的資料喔！</div>';
                         return;
                     }
 
-                    // 三層分組結構: groups[category][city][region] = [items...]
+                    // 二層分組結構: groups[city][region] = [items...]
                     const groups = {};
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
                         data.id = doc.id;
-                        const cat = data.category || '未分類';
                         const city = data.city || '臺中市';
                         const reg = data.region || '其他區域';
                         
-                        if (!groups[cat]) groups[cat] = {};
-                        if (!groups[cat][city]) groups[cat][city] = {};
-                        if (!groups[cat][city][reg]) groups[cat][city][reg] = [];
+                        if (!groups[city]) groups[city] = {};
+                        if (!groups[city][reg]) groups[city][reg] = [];
                         
-                        groups[cat][city][reg].push(data);
+                        groups[city][reg].push(data);
                     });
 
                     container.innerHTML = '';
 
-                    // 渲染三層結構
-                    for (const [categoryName, cities] of Object.entries(groups)) {
-                        const catHeader = document.createElement('div');
-                        catHeader.className = 'category-header';
-                        catHeader.innerHTML = `📌 ${categoryName}`;
-                        container.appendChild(catHeader);
+                    // 渲染兩層結構 (次標縣市 ➔ 小標區域)
+                    for (const [cityName, regions] of Object.entries(groups)) {
+                        const cityHeader = document.createElement('div');
+                        cityHeader.className = 'city-header';
+                        cityHeader.innerHTML = `🏙️ ${cityName}`;
+                        container.appendChild(cityHeader);
 
-                        for (const [cityName, regions] of Object.entries(cities)) {
-                            const cityHeader = document.createElement('div');
-                            cityHeader.className = 'city-header';
-                            cityHeader.innerHTML = `🏙️ ${cityName}`;
-                            container.appendChild(cityHeader);
+                        for (const [regionName, items] of Object.entries(regions)) {
+                            const regHeader = document.createElement('div');
+                            regHeader.className = 'region-header';
+                            regHeader.innerHTML = `📍 ${regionName}`;
+                            container.appendChild(regHeader);
 
-                            for (const [regionName, items] of Object.entries(regions)) {
-                                const regHeader = document.createElement('div');
-                                regHeader.className = 'region-header';
-                                regHeader.innerHTML = `📍 ${regionName}`;
-                                container.appendChild(regHeader);
-
-                                items.forEach(item => {
-                                    const card = document.createElement('div');
-                                    card.className = 'place-card';
-                                    
-                                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.city + item.region + ' ' + (item.memo || ''))}`;
-                                    
-                                    let actionButtons = '';
-                                    if (!isCompleted) {
-                                        actionButtons = `
-                                            <button class="btn-primary" onclick="window.open('${mapsUrl}', '_blank')">🗺️ Google 地圖</button>
-                                            <button class="btn-success" onclick="toggleStatus('${item.id}', true)">✔️ 標記已去過</button>
-                                            <button class="btn-danger" onclick="deletePlace('${item.id}')">🗑️ 刪除</button>
-                                        `;
-                                    } else {
-                                        actionButtons = `
-                                            <button class="btn-primary" onclick="window.open('${mapsUrl}', '_blank')">🗺️ Google 地圖</button>
-                                            <button class="btn-nav" onclick="toggleStatus('${item.id}', false)">↩️ 移回想去</button>
-                                            <button class="btn-danger" onclick="deletePlace('${item.id}')">🗑️ 刪除</button>
-                                        `;
-                                    }
-
-                                    card.innerHTML = `
-                                        <div class="place-title">${item.name}</div>
-                                        <div class="place-memo">📝 備註：${item.memo || '無'}</div>
-                                        <div class="card-actions">
-                                            ${actionButtons}
-                                        </div>
+                            items.forEach(item => {
+                                const card = document.createElement('div');
+                                card.className = 'place-card';
+                                
+                                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.city + item.region + ' ' + (item.memo || ''))}`;
+                                
+                                let actionButtons = '';
+                                if (!currentIsCompleted) {
+                                    actionButtons = `
+                                        <button class="btn-primary" onclick="window.open('${mapsUrl}', '_blank')">🗺️ Google 地圖</button>
+                                        <button class="btn-success" onclick="toggleStatus('${item.id}', true)">✔️ 標記已去過</button>
+                                        <button class="btn-danger" onclick="deletePlace('${item.id}')">🗑️ 刪除</button>
                                     `;
-                                    container.appendChild(card);
-                                });
-                            }
+                                } else {
+                                    actionButtons = `
+                                        <button class="btn-primary" onclick="window.open('${mapsUrl}', '_blank')">🗺️ Google 地圖</button>
+                                        <button class="btn-nav" onclick="toggleStatus('${item.id}', false)">↩️ 移回想去</button>
+                                        <button class="btn-danger" onclick="deletePlace('${item.id}')">🗑️ 刪除</button>
+                                    `;
+                                }
+
+                                card.innerHTML = `
+                                    <div class="place-title">${item.name}</div>
+                                    <div class="place-memo">📝 備註：${item.memo || '無'}</div>
+                                    <div class="card-actions">
+                                        ${actionButtons}
+                                    </div>
+                                `;
+                                container.appendChild(card);
+                            });
                         }
                     }
                 })
@@ -518,11 +524,7 @@
                 completed: newStatus
             })
             .then(() => {
-                if (newStatus) {
-                    loadPlaces(false);
-                } else {
-                    loadPlaces(true);
-                }
+                loadFilteredPlaces();
             })
             .catch((error) => {
                 alert('更新狀態失敗：' + error.message);
@@ -533,8 +535,7 @@
             if (confirm('確定要刪除這個地點嗎？')) {
                 db.collection("dating_places").doc(id).delete()
                     .then(() => {
-                        const isComp = document.getElementById('page-3').classList.contains('active');
-                        loadPlaces(isComp);
+                        loadFilteredPlaces();
                     })
                     .catch((error) => {
                         alert('刪除失敗：' + error.message);
