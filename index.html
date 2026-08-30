@@ -77,9 +77,24 @@
 <!-- 第三頁：已完成（已去過）清單 -->
 <div id="page-done" class="card hidden">
     <h2>🏆 已去過的地點</h2>
+    
     <div class="category-section">
-        <ul id="list-done"></ul>
+        <h3>主食</h3>
+        <ul id="list-done-main"></ul>
     </div>
+    <div class="category-section">
+        <h3>點心</h3>
+        <ul id="list-done-snack"></ul>
+    </div>
+    <div class="category-section">
+        <h3>飲料</h3>
+        <ul id="list-done-drink"></ul>
+    </div>
+    <div class="category-section">
+        <h3>風景</h3>
+        <ul id="list-done-scenery"></ul>
+    </div>
+
     <button class="secondary-btn" onclick="switchPage('home')">⬅ 返回新增頁面</button>
     <button class="secondary-btn" onclick="switchPage('list')">⬅ 返回想去清單</button>
 </div>
@@ -96,7 +111,6 @@
         render();
     }
 
-    // 頁面切換控制
     window.switchPage = function(page) {
         document.getElementById('page-home').classList.add('hidden');
         document.getElementById('page-list').classList.add('hidden');
@@ -116,7 +130,7 @@
     function render() {
         const places = getPlaces();
         
-        // 1. 渲染第二頁（想去清單，status != 'done'）
+        // 1. 渲染第二頁（想去清單）
         for (let key in categories) {
             const ul = document.getElementById(`list-${key}`);
             ul.innerHTML = '';
@@ -143,33 +157,33 @@
             }
         }
 
-        // 2. 渲染第三頁（已完成清單，status == 'done'）
-        const doneUl = document.getElementById('list-done');
-        doneUl.innerHTML = '';
-        const donePlaces = places.filter(p => p.status === 'done');
+        // 2. 渲染第三頁（已完成清單 - 依分類顯示）
+        for (let key in categories) {
+            const doneUl = document.getElementById(`list-done-${key}`);
+            doneUl.innerHTML = '';
+            const doneFiltered = places.filter(p => p.category === key && p.status === 'done');
 
-        if (donePlaces.length === 0) {
-            doneUl.innerHTML = '<li style="color: #888;">目前還沒有去過任何地方喔！</li>';
-        } else {
-            donePlaces.forEach((p) => {
-                const realIndex = places.findIndex(item => item === p);
-                const li = document.createElement('li');
-                
-                let mapLink = p.mapUrl && p.mapUrl.trim() !== '' 
-                    ? p.mapUrl 
-                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
+            if (doneFiltered.length === 0) {
+                doneUl.innerHTML = '<li style="color: #888;">暫無記錄</li>';
+            } else {
+                doneFiltered.forEach((p) => {
+                    const realIndex = places.findIndex(item => item === p);
+                    const li = document.createElement('li');
+                    
+                    let mapLink = p.mapUrl && p.mapUrl.trim() !== '' 
+                        ? p.mapUrl 
+                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
 
-                let mapButtonHtml = `<a href="${mapLink}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
-                let catName = categories[p.category] || '';
+                    let mapButtonHtml = `<a href="${mapLink}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
 
-                li.innerHTML = `<strong>${p.name}</strong> [${catName}] ${mapButtonHtml} - <small>${p.note || ''}</small> 
-                                <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
-                doneUl.appendChild(li);
-            });
+                    li.innerHTML = `<strong>${p.name}</strong> ${mapButtonHtml} - <small>${p.note || ''}</small> 
+                                    <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
+                    doneUl.appendChild(li);
+                });
+            }
         }
     }
 
-    // 標記為已完成
     window.markAsDone = function(index) {
         let places = getPlaces();
         places[index].status = 'done';
