@@ -104,7 +104,7 @@
         
         <label>Google 地圖網址（選填）：</label>
         <input type="text" id="mapUrl" placeholder="有網址可貼，沒填也沒有關係！">
-        <div style="font-size: 12px; color: #64748b; margin-top: -12px; margin-bottom: 16px;">💡 沒填寫網址時，系統會自動用店名幫你產生 Google 地圖搜尋鍵。</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: -12px; margin-bottom: 16px;">💡 沒填寫網址時，系統會自動用店名幫你產生 Google 地圖搜尋。</div>
         
         <label>備註（建議包含地區，例如：南屯區、西區）：</label>
         <input type="text" id="note" placeholder="例如：南屯區、必吃花生豆花">
@@ -140,7 +140,7 @@
 </div>
 
 <script>
-    // 已帶入你的 Firebase 雲端設定
+    // Firebase 雲端設定
     const firebaseConfig = {
         apiKey: "AIzaSyAom-u5FTFI8B8ZWiCdZ0YXqy2CuJ5eNFg",
         authDomain: "couples-dating-50cb0.firebaseapp.com",
@@ -156,7 +156,7 @@
 
     let allPlaces = [];
 
-    // 即時監聽雲端資料庫（雙向同步更新）
+    // 即時監聽雲端資料庫
     db.collection("places").onSnapshot((snapshot) => {
         allPlaces = [];
         snapshot.forEach((doc) => {
@@ -197,100 +197,3 @@
         }
         return '其他地區';
     }
-
-    function renderCategoryContent(containerId, filteredPlaces, isDonePage) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        container.innerHTML = '';
-
-        if (filteredPlaces.length === 0) {
-            container.innerHTML = '<ul style="padding-left: 20px; margin:0;"><li style="color: #94a3b8; list-style: none;">暫無記錄</li></ul>';
-            return;
-        }
-
-        let regionGroups = {};
-        filteredPlaces.forEach(p => {
-            let region = extractRegion(p.note);
-            if (!regionGroups[region]) {
-                regionGroups[region] = [];
-            }
-            regionGroups[region].push(p);
-        });
-
-        for (let region in regionGroups) {
-            let regionDiv = document.createElement('div');
-            regionDiv.innerHTML = `<div class="sub-region-title">📍 ${region}</div>`;
-            
-            let ul = document.createElement('ul');
-            regionGroups[region].forEach(p => {
-                const li = document.createElement('li');
-                
-                let mapLink = p.mapUrl ? p.mapUrl : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
-                let mapButtonHtml = `<a href="${mapLink}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
-                
-                let actionBtnHtml = isDonePage 
-                    ? `<button class="delete-btn" onclick="deletePlace('${p.id}')">刪除</button>`
-                    : `<button class="done-btn" onclick="markAsDone('${p.id}')">✔️ 完成</button>
-                       <button class="delete-btn" onclick="deletePlace('${p.id}')">刪除</button>`;
-
-                li.innerHTML = `<strong>${p.name}</strong> ${mapButtonHtml} <span style="color:#64748b;">- ${p.note || ''}</span> ${actionBtnHtml}`;
-                ul.appendChild(li);
-            });
-            regionDiv.appendChild(ul);
-            container.appendChild(regionDiv);
-        }
-    }
-
-    function render() {
-        for (let key in categories) {
-            const filtered = allPlaces.filter(p => p.category === key && p.status !== 'done');
-            renderCategoryContent(`list-${key}`, filtered, false);
-        }
-
-        for (let key in categories) {
-            const doneFiltered = allPlaces.filter(p => p.category === key && p.status === 'done');
-            renderCategoryContent(`list-done-${key}`, doneFiltered, true);
-        }
-    }
-
-    window.markAsDone = function(id) {
-        db.collection("places").doc(id).update({
-            status: 'done'
-        }).catch((error) => {
-            alert("更新失敗：" + error.message);
-        });
-    }
-
-    window.deletePlace = function(id) {
-        if (confirm("確定要刪除這個地點嗎？")) {
-            db.collection("places").doc(id).delete().catch((error) => {
-                alert("刪除失敗：" + error.message);
-            });
-        }
-    }
-
-    document.getElementById('placeForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const name = document.getElementById('name').value;
-        const category = document.getElementById('category').value;
-        const mapUrl = document.getElementById('mapUrl').value;
-        const note = document.getElementById('note').value;
-
-        db.collection("places").add({
-            name,
-            category,
-            mapUrl,
-            note,
-            status: 'want',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-            document.getElementById('placeForm').reset();
-            alert('✨ 成功新增至雲端！');
-        }).catch((error) => {
-            alert("新增失敗：" + error.message);
-        });
-    });
-</script>
-
-</body>
-</html>
