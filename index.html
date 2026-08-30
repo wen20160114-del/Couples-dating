@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>我的口袋地圖清單</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 20px auto; padding: 0 15px; background: #f9f9f9; }
+        .card { background: #fff; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0 15px 0; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .category-section { margin-top: 20px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; }
+        .delete-btn { background: #dc3545; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 12px; margin-left: 5px; width: auto; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>新增想去的地點</h2>
+    <form id="placeForm">
+        <label>名稱：</label>
+        <input type="text" id="name" required placeholder="例如：某某老街小吃">
+        
+        <label>分類：</label>
+        <select id="category">
+            <option value="main">主食</option>
+            <option value="snack">點心</option>
+            <option value="drink">飲料</option>
+            <option value="scenery">風景</option>
+        </select>
+        
+        <label>備註/地址：</label>
+        <input type="text" id="note" placeholder="例如：捷運站附近、必點珍珠奶茶">
+        
+        <button type="submit">新增記錄</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>我的口袋名單</h2>
+    <div class="category-section">
+        <h3>📌 主食</h3>
+        <ul id="list-main"></ul>
+    </div>
+    <div class="category-section">
+        <h3>📌 點心</h3>
+        <ul id="list-snack"></ul>
+    </div>
+    <div class="category-section">
+        <h3>📌 飲料</h3>
+        <ul id="list-drink"></ul>
+    </div>
+    <div class="category-section">
+        <h3>📌 風景</h3>
+        <ul id="list-scenery"></ul>
+    </div>
+</div>
+
+<script>
+    const categories = { 'main': '主食', 'snack': '點心', 'drink': '飲料', 'scenery': '風景' };
+    
+    // 讀取資料
+    function getPlaces() {
+        return JSON.parse(localStorage.getItem('my_places') || '[]');
+    }
+
+    // 儲存資料
+    function savePlaces(places) {
+        localStorage.setItem('my_places', JSON.stringify(places));
+        render();
+    }
+
+    // 畫面渲染
+    function render() {
+        const places = getPlaces();
+        for (let key in categories) {
+            const ul = document.getElementById(`list-${key}`);
+            ul.innerHTML = '';
+            const filtered = places.filter(p => p.category === key);
+            
+            if (filtered.length === 0) {
+                ul.innerHTML = '<li style="color: #888;">暫無記錄</li>';
+            } else {
+                filtered.forEach((p, index) => {
+                    // 找出原始陣列的真實 index 以便刪除
+                    const realIndex = places.findIndex(item => item === p);
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${p.name}</strong> - <small>${p.note}</small> <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
+                    ul.appendChild(li);
+                });
+            }
+        }
+    }
+
+    // 刪除功能
+    window.deletePlace = function(index) {
+        let places = getPlaces();
+        places.splice(index, 1);
+        savePlaces(places);
+    }
+
+    // 表單提交
+    document.getElementById('placeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const name = document.getElementById('name').value;
+        const category = document.getElementById('category').value;
+        const note = document.getElementById('note').value;
+
+        let places = getPlaces();
+        places.push({ name, category, note });
+        savePlaces(places);
+
+        document.getElementById('placeForm').reset();
+    });
+
+    // 初始化載入
+    render();
+</script>
+
+</body>
+</html>
