@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <title>我的口袋地圖清單</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- PWA 必要設定 -->
+    <meta name="theme-color" content="#3b82f6">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,{
+        %22name%22: %22我的口袋地圖清單%22,
+        %22short_name%22: %22口袋地圖%22,
+        %22start_url%22: %22./%22,
+        %22display%22: %22standalone%22,
+        %22background_color%22: %22#f5f7fa%22,
+        %22theme_color%22: %22#3b82f6%22,
+        %22icons%22: [{
+            %22src%22: %22icon.png%22,
+            %22sizes%22: %22192x192%22,
+            %22type%22: %22image/png%22
+        }]
+    }">
+
     <style>
         * { box-sizing: border-box; }
         body { 
@@ -132,6 +150,16 @@
 </div>
 
 <script>
+    // 註冊 Service Worker 支援 PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('data:text/javascript;base64,' + btoa(`
+                self.addEventListener('install', e => {});
+                self.addEventListener('fetch', e => {});
+            `)).catch(() => {});
+        });
+    }
+
     const categories = { 'main': '主食', 'snack': '點心', 'drink': '飲料', 'scenery': '風景' };
     
     function getPlaces() {
@@ -202,10 +230,10 @@
             regionDiv.innerHTML = `<div class="sub-region-title">📍 ${region}</div>`;
             
             let ul = document.createElement('ul');
+            regionGroups[region].push ? null : null; // safe check
             regionGroups[region].forEach(p => {
                 const li = document.createElement('li');
                 
-                // 自動使用店名產生 Google 地圖搜尋連結
                 let mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
                 let mapButtonHtml = `<a href="${mapLink}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
                 
@@ -255,7 +283,7 @@
         e.preventDefault();
         const name = document.getElementById('name').value;
         const category = document.getElementById('category').value;
-        const note = document.getElementById('note').value;
+        const note = document.getElementById('note'].value;
 
         let places = getPlaces();
         const newPlace = {
