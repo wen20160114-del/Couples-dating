@@ -10,11 +10,13 @@
         input, select, button { width: 100%; padding: 10px; margin: 5px 0 15px 0; box-sizing: border-box; }
         button { background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
         .secondary-btn { background: #6c757d; margin-top: 5px; }
+        .map-btn { background: #28a745; padding: 2px 6px; font-size: 12px; width: auto; margin-left: 5px; text-decoration: none; display: inline-block; border-radius: 3px; color: white; }
         .category-section { margin-top: 20px; }
         ul { padding-left: 20px; }
-        li { margin-bottom: 8px; }
+        li { margin-bottom: 10px; line-height: 1.5; }
         .delete-btn { background: #dc3545; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 12px; margin-left: 5px; width: auto; }
         .hidden { display: none; }
+        .hint { font-size: 12px; color: #666; margin-top: -10px; margin-bottom: 15px; display: block; }
     </style>
 </head>
 <body>
@@ -34,7 +36,11 @@
             <option value="scenery">風景</option>
         </select>
         
-        <label>備註/地址：</label>
+        <label>Google 地圖網址（選填）：</label>
+        <input type="url" id="mapUrl" placeholder="貼上 Google 地圖的分享網址">
+        <small class="hint">💡 提示：在手機 Google 地圖點選「分享」->「複製連結」，貼上即可！</small>
+        
+        <label>備註：</label>
         <input type="text" id="note" placeholder="例如：捷運站附近、必點珍珠奶茶">
         
         <button type="submit">新增記錄</button>
@@ -103,7 +109,14 @@
                 filtered.forEach((p) => {
                     const realIndex = places.findIndex(item => item === p);
                     const li = document.createElement('li');
-                    li.innerHTML = `<strong>${p.name}</strong> - <small>${p.note}</small> <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
+                    
+                    // 組合地圖按鈕（如果有填寫地圖網址才顯示）
+                    let mapButtonHtml = '';
+                    if (p.mapUrl && p.mapUrl.trim() !== '') {
+                        mapButtonHtml = `<a href="${p.mapUrl}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
+                    }
+
+                    li.innerHTML = `<strong>${p.name}</strong> ${mapButtonHtml} - <small>${p.note || ''}</small> <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
                     ul.appendChild(li);
                 });
             }
@@ -120,10 +133,11 @@
         e.preventDefault();
         const name = document.getElementById('name').value;
         const category = document.getElementById('category').value;
+        const mapUrl = document.getElementById('mapUrl').value;
         const note = document.getElementById('note').value;
 
         let places = getPlaces();
-        places.push({ name, category, note });
+        places.push({ name, category, mapUrl, note });
         savePlaces(places);
 
         document.getElementById('placeForm').reset();
