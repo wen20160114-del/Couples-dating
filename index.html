@@ -104,10 +104,8 @@
         }
     }
 
-    // 自動從備註中萃取地區（例如找尋「O區」或直接用備註前幾個字，若無則歸類為「未分類地區」）
     function extractRegion(note) {
         if (!note) return '未分類地區';
-        // 尋找常見的區名（例如：南屯區、西區、北區等）
         const match = note.match(/[\u4e05-\u9fa5]+[區市鎮鄉]/);
         if (match) {
             return match[0];
@@ -124,7 +122,6 @@
             return;
         }
 
-        // 依照地區（Region）進行二次分組
         let regionGroups = {};
         filteredPlaces.forEach(p => {
             let region = extractRegion(p.note);
@@ -134,14 +131,12 @@
             regionGroups[region].push(p);
         });
 
-        // 針對每個地區產生子群組
         for (let region in regionGroups) {
             let regionDiv = document.createElement('div');
             regionDiv.innerHTML = `<div class="sub-region-title">📍 ${region}</div>`;
             
             let ul = document.createElement('ul');
             regionGroups[region].forEach(p => {
-                const realIndex = getPlaces().findIndex(item => item === p);
                 const li = document.createElement('li');
                 
                 let mapLink = p.mapUrl && p.mapUrl.trim() !== '' 
@@ -150,9 +145,9 @@
 
                 let mapButtonHtml = `<a href="${mapLink}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
                 let actionBtnHtml = isDonePage 
-                    ? `<button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`
-                    : `<button class="done-btn" onclick="markAsDone(${realIndex})">✔️ 完成</button>
-                       <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
+                    ? `<button class="delete-btn" onclick="deletePlace('${p.id}')">刪除</button>`
+                    : `<button class="done-btn" onclick="markAsDone('${p.id}')">✔️ 完成</button>
+                       <button class="delete-btn" onclick="deletePlace('${p.id}')">刪除</button>`;
 
                 li.innerHTML = `<strong>${p.name}</strong> ${mapButtonHtml} - <small>${p.note || ''}</small> ${actionBtnHtml}`;
                 ul.appendChild(li);
@@ -165,30 +160,31 @@
     function render() {
         const places = getPlaces();
         
-        // 1. 渲染第二頁（想去清單）
         for (let key in categories) {
             const filtered = places.filter(p => p.category === key && p.status !== 'done');
             renderCategoryContent(`list-${key}`, filtered, false);
         }
 
-        // 2. 渲染第三頁（已完成清單）
         for (let key in categories) {
             const doneFiltered = places.filter(p => p.category === key && p.status === 'done');
             renderCategoryContent(`list-done-${key}`, doneFiltered, true);
         }
     }
 
-    window.markAsDone = function(index) {
+    window.markAsDone = function(id) {
         let places = getPlaces();
-        places[index].status = 'done';
-        savePlaces(places);
-        alert('太棒了！已移至「已去過」清單 🏆');
+        let place = places.find(p => p.id === id);
+        if (place) {
+            place.status = 'done';
+            savePlaces(places);
+            alert('太棒了！已移至「已去過」清單 🏆');
+        }
     }
 
-    window.deletePlace = function(index) {
+    window.deletePlace = function(id) {
         let places = getPlaces();
-        places.splice(index, 1);
-        savePlaces(places);
+        let newPlaces = places.filter(p => p.id !== id);
+        savePlaces(newPlaces);
     }
 
     document.getElementById('placeForm').addEventListener('submit', function(e) {
@@ -199,7 +195,17 @@
         const note = document.getElementById('note').value;
 
         let places = getPlaces();
-        places.push({ name, category, mapUrl, note, status: 'want' });
+        // 產生獨立的 id (用時間戳記加亂數)
+        const newPlace = {
+            id: 'p_' + Date.now() + Math.random().toString(36.substr(2, 5)),
+            name,
+            category,
+            mapUrl,
+            note,
+            status: 'want'
+        };
+
+        places.push(newPlace);
         savePlaces(places);
 
         document.getElementById('placeForm').reset();
