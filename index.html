@@ -26,7 +26,7 @@
     <h2>新增想去的地點</h2>
     <form id="placeForm">
         <label>名稱：</label>
-        <input type="text" id="name" required placeholder="例如：某某老街小吃">
+        <input type="text" id="name" required placeholder="例如：馬岡豆花">
         
         <label>分類：</label>
         <select id="category">
@@ -37,11 +37,11 @@
         </select>
         
         <label>Google 地圖網址（選填）：</label>
-        <input type="url" id="mapUrl" placeholder="貼上 Google 地圖的分享網址">
-        <small class="hint">💡 提示：在手機 Google 地圖點選「分享」->「複製連結」，貼上即可！</small>
+        <input type="url" id="mapUrl" placeholder="有網址可貼，沒填也沒關係！">
+        <small class="hint">💡 沒填寫網址時，系統會自動用店名幫你產生Google地圖搜尋鍵。</small>
         
         <label>備註：</label>
-        <input type="text" id="note" placeholder="例如：捷運站附近、必點珍珠奶茶">
+        <input type="text" id="note" placeholder="例如：南屯區、必吃花生豆花">
         
         <button type="submit">新增記錄</button>
     </form>
@@ -84,7 +84,6 @@
         render();
     }
 
-    // 頁面切換控制
     window.switchPage = function(page) {
         if (page === 'home') {
             document.getElementById('page-home').classList.remove('hidden');
@@ -110,11 +109,12 @@
                     const realIndex = places.findIndex(item => item === p);
                     const li = document.createElement('li');
                     
-                    // 組合地圖按鈕（如果有填寫地圖網址才顯示）
-                    let mapButtonHtml = '';
-                    if (p.mapUrl && p.mapUrl.trim() !== '') {
-                        mapButtonHtml = `<a href="${p.mapUrl}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
-                    }
+                    // 如果有填地圖網址就用網址，沒填就自動用店名產生 Google 地圖搜尋連結
+                    let mapLink = p.mapUrl && p.mapUrl.trim() !== '' 
+                        ? p.mapUrl 
+                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.name)}`;
+
+                    let mapButtonHtml = `<a href="${mapLink}" target="_blank" class="map-btn">🗺️ 地圖</a>`;
 
                     li.innerHTML = `<strong>${p.name}</strong> ${mapButtonHtml} - <small>${p.note || ''}</small> <button class="delete-btn" onclick="deletePlace(${realIndex})">刪除</button>`;
                     ul.appendChild(li);
